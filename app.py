@@ -36,6 +36,7 @@ st.markdown("""
 header[data-testid="stHeader"], .stApp > header { display: none; }
 html, body { color: #1e293b; font-family: 'Inter', sans-serif; }
 h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; color: #1e293b; }
+h1 { font-size: 1.5rem !important; }
 [data-testid="stAppViewBlockContainer"] { max-width: 1400px; padding: 1rem 2rem; }
 /* Tabs 样式 */
 .stTabs [data-baseweb="tab-list"] { gap: 2px; background: #fff; border-radius: 10px; padding: 4px; border: 1px solid #e2e8f0; margin-bottom: 1rem; }
