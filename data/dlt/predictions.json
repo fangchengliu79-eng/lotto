@@ -1,0 +1,276 @@
+[
+  {
+    "id": "pred_26058_20260528_135926",
+    "period": "26058",
+    "draw_date": "2026-05-27",
+    "created_at": "2026-05-28 13:59:26",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "score": 0.3792,
+        "reason": "奇偶比2:3 | 和值60",
+        "main": [
+          2,
+          11,
+          13,
+          16,
+          18
+        ],
+        "sub": [
+          2,
+          8
+        ]
+      },
+      {
+        "group": 2,
+        "score": 0.3768,
+        "reason": "奇偶比4:1 | 和值72",
+        "main": [
+          1,
+          15,
+          16,
+          19,
+          21
+        ],
+        "sub": [
+          3,
+          6
+        ]
+      },
+      {
+        "group": 3,
+        "score": 0.3591,
+        "reason": "冷号补位 | 奇偶比1:4",
+        "main": [
+          14,
+          18,
+          26,
+          27,
+          34
+        ],
+        "sub": [
+          9,
+          10
+        ]
+      },
+      {
+        "group": 4,
+        "score": 0.3425,
+        "reason": "奇偶比3:2 | 和值67",
+        "main": [
+          2,
+          3,
+          14,
+          23,
+          25
+        ],
+        "sub": [
+          4,
+          7
+        ]
+      },
+      {
+        "group": 5,
+        "score": 0.3388,
+        "reason": "奇偶比2:3 | 和值122",
+        "main": [
+          13,
+          22,
+          24,
+          30,
+          33
+        ],
+        "sub": [
+          2,
+          12
+        ]
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        7,
+        12,
+        13,
+        18,
+        34
+      ],
+      "sub": [
+        1,
+        5
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "total_hits": 2,
+        "main_matches": [
+          13,
+          18
+        ],
+        "sub_matches": [],
+        "main_hits": 2,
+        "sub_hits": 0
+      },
+      {
+        "group": 2,
+        "total_hits": 0,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0
+      },
+      {
+        "group": 3,
+        "total_hits": 2,
+        "main_matches": [
+          18,
+          34
+        ],
+        "sub_matches": [],
+        "main_hits": 2,
+        "sub_hits": 0
+      },
+      {
+        "group": 4,
+        "total_hits": 0,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0
+      },
+      {
+        "group": 5,
+        "total_hits": 1,
+        "main_matches": [
+          13
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0
+      }
+    ],
+    "summary": {
+      "best_group": 1,
+      "best_hits": 2,
+      "avg_total_hits": 1.0,
+      "actual_main": [
+        7,
+        12,
+        13,
+        18,
+        34
+      ],
+      "actual_sub": [
+        1,
+        5
+      ],
+      "avg_main_hits": 1.0,
+      "avg_sub_hits": 0.0
+    }
+  },
+  {
+    "id": "pred_26059_20260528_135927",
+    "period": "26059",
+    "draw_date": "2026-05-30",
+    "created_at": "2026-05-28 13:59:27",
+    "status": "active",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "score": 0.3914,
+        "reason": "奇偶比1:4 | 和值75 | 后区双奇",
+        "main": [
+          4,
+          8,
+          14,
+          21,
+          28
+        ],
+        "sub": [
+          5,
+          7
+        ]
+      },
+      {
+        "group": 2,
+        "score": 0.3593,
+        "reason": "1个冷号补位 | 奇偶比2:3 | 和值适中(84) | 后区奇偶",
+        "main": [
+          2,
+          10,
+          17,
+          27,
+          28
+        ],
+        "sub": [
+          8,
+          11
+        ]
+      },
+      {
+        "group": 3,
+        "score": 0.3519,
+        "reason": "1个冷号补位 | 奇偶比3:2 | 和值适中(113) | 后区双偶",
+        "main": [
+          7,
+          18,
+          25,
+          31,
+          32
+        ],
+        "sub": [
+          6,
+          8
+        ]
+      },
+      {
+        "group": 4,
+        "score": 0.2943,
+        "reason": "3个热号 | 奇偶比2:3 | 和值72 | 后区双偶",
+        "main": [
+          2,
+          3,
+          6,
+          29,
+          32
+        ],
+        "sub": [
+          2,
+          10
+        ]
+      },
+      {
+        "group": 5,
+        "score": 0.2496,
+        "reason": "奇偶比3:2 | 和值适中(97) | 后区双偶",
+        "main": [
+          11,
+          12,
+          21,
+          26,
+          27
+        ],
+        "sub": [
+          10,
+          12
+        ]
+      }
+    ],
+    "actual_draw": null,
+    "matches": null,
+    "summary": null
+  }
+]
