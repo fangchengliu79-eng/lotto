@@ -140,18 +140,17 @@ def render_lottery(cfg):
         st.markdown(f"<h1>{cfg.icon} 当前预测结果</h1>", unsafe_allow_html=True)
         lp = get_latest_prediction(cfg)
         if lp is None:
-            if st.button("🚀 生成首期预测", type="primary", key=f"gen_first_{cfg.short}"):
-                with st.spinner("正在生成预测..."):
-                    md = {"f": FrequencyModel(cfg), "p": PoissonModel(cfg),
-                          "e": ExponentialSmoothingModel(cfg, alpha=0.3), "m": MonteCarloModel(cfg)}
-                    md["m"].n_simulations = 20000
-                    mn = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in df.iterrows()])
-                    sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
-                    for m in md.values(): m.fit(mn, sn)
-                    ensemble = EnsembleModel(md, cfg)
-                    r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
-                    save_prediction(period=str(int(df.iloc[0]["period"])+1), recommendations=r2.get("groups",[]), cfg=cfg)
-                    st.rerun()
+            with st.spinner(f"正在首次生成{cfg.name}预测..."):
+                md = {"f": FrequencyModel(cfg), "p": PoissonModel(cfg),
+                      "e": ExponentialSmoothingModel(cfg, alpha=0.3), "m": MonteCarloModel(cfg)}
+                md["m"].n_simulations = 20000
+                mn = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in df.iterrows()])
+                sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
+                for m in md.values(): m.fit(mn, sn)
+                ensemble = EnsembleModel(md, cfg)
+                r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
+                save_prediction(period=str(int(df.iloc[0]["period"])+1), recommendations=r2.get("groups",[]), cfg=cfg)
+                st.rerun()
         else:
             p, s, nr, cr = lp["period"], lp["status"], len(lp["recommendations"]), lp.get("created_at","")
             if s == "completed": st.success(f"✅ **期{p}** 已开奖 · 最佳命中 **{lp['summary']['best_hits']}** 个")

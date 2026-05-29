@@ -1,9 +1,9 @@
 [
   {
-    "id": "pred_test_score_20260529_141011",
-    "period": "test_score",
+    "id": "pred_2025891_20260529_143626",
+    "period": "2025891",
     "draw_date": "待定",
-    "created_at": "2026-05-29 14:10:11",
+    "created_at": "2026-05-29 14:36:26",
     "status": "active",
     "models_used": [
       "frequency",
@@ -25,8 +25,8 @@
         "sub": [
           4
         ],
-        "score": 0.0,
-        "reason": "综合评分 0.0"
+        "score": 100.0,
+        "reason": "综合评分 100.0"
       },
       {
         "group": 2,
@@ -41,8 +41,8 @@
         "sub": [
           10
         ],
-        "score": 16.7,
-        "reason": "综合评分 16.7"
+        "score": 84.6,
+        "reason": "综合评分 84.6"
       },
       {
         "group": 3,
@@ -57,8 +57,8 @@
         "sub": [
           5
         ],
-        "score": 33.3,
-        "reason": "综合评分 33.3"
+        "score": 69.2,
+        "reason": "综合评分 69.2"
       },
       {
         "group": 4,
@@ -73,8 +73,8 @@
         "sub": [
           13
         ],
-        "score": 66.7,
-        "reason": "综合评分 66.7"
+        "score": 38.5,
+        "reason": "综合评分 38.5"
       },
       {
         "group": 5,
@@ -89,8 +89,106 @@
         "sub": [
           4
         ],
-        "score": 100.0,
-        "reason": "综合评分 100.0"
+        "score": 0.0,
+        "reason": "综合评分 0.0"
+      }
+    ],
+    "actual_draw": null,
+    "matches": null,
+    "summary": null
+  },
+  {
+    "id": "pred_2025890_20260529_154018",
+    "period": "2025890",
+    "draw_date": "待定",
+    "created_at": "2026-05-29 15:40:18",
+    "status": "active",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          11,
+          14,
+          20,
+          23,
+          29,
+          30
+        ],
+        "sub": [
+          13
+        ],
+        "score": 21.1,
+        "reason": "综合评分 21.1"
+      },
+      {
+        "group": 2,
+        "main": [
+          3,
+          12,
+          17,
+          19,
+          28,
+          33
+        ],
+        "sub": [
+          2
+        ],
+        "score": 30.0,
+        "reason": "综合评分 30.0"
+      },
+      {
+        "group": 3,
+        "main": [
+          1,
+          2,
+          9,
+          13,
+          25,
+          31
+        ],
+        "sub": [
+          15
+        ],
+        "score": 30.2,
+        "reason": "综合评分 30.2"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          14,
+          18,
+          22,
+          24,
+          25
+        ],
+        "sub": [
+          5
+        ],
+        "score": 32.4,
+        "reason": "综合评分 32.4"
+      },
+      {
+        "group": 5,
+        "main": [
+          2,
+          6,
+          9,
+          18,
+          22,
+          33
+        ],
+        "sub": [
+          4
+        ],
+        "score": 27.3,
+        "reason": "综合评分 27.3"
       }
     ],
     "actual_draw": null,

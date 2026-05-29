@@ -49,6 +49,19 @@ class EnsembleModel:
         if total > 0:
             self.weights = {k: v / total for k, v in self.weights.items()}
 
+        # Build name mapping: short keys in models_dict → weight keys
+        self._name_map = {}
+        short_to_long = {
+            'f': 'frequency', 'frequency': 'frequency',
+            'p': 'poisson', 'poisson': 'poisson',
+            'e': 'exponential_smoothing', 'exponential_smoothing': 'exponential_smoothing',
+            'm': 'monte_carlo', 'monte_carlo': 'monte_carlo',
+            'lstm': 'lstm', 'xgboost': 'xgboost', 'random_forest': 'random_forest',
+        }
+        for key in self.models:
+            long_name = short_to_long.get(key, key)
+            self._name_map[key] = long_name
+
         self.logger.info(
             "EnsembleModel initialized with %d models for %s",
             len(self.models), cfg.name,
@@ -137,17 +150,38 @@ class EnsembleModel:
             sub_scores[n] = 0.0
 
         for model_name, preds in all_predictions.items():
-            weight = self.weights.get(model_name, 0.0)
+            # Map short name to weight name
+            weight_name = self._name_map.get(model_name, model_name)
+            weight = self.weights.get(weight_name, 0.0)
             if weight <= 0:
                 continue
 
-            for pred in preds:
-                main_nums = pred.get("main", [])
-                sub_nums = pred.get("sub", [])
-                for n in main_nums:
-                    main_scores[n] = main_scores.get(n, 0.0) + weight
-                for n in sub_nums:
-                    sub_scores[n] = sub_scores.get(n, 0.0) + weight
+            # Use model's probability distribution for sub numbers
+            # (more informative than vote counting for small pools)
+            model = self.models.get(model_name)
+            sub_probs = getattr(model, 'sub_probs', None)
+            main_probs = getattr(model, 'main_probs', None)
+
+            if sub_probs is not None and len(sub_probs) > 0:
+                # Use probability distribution directly
+                for i, n in enumerate(range(self.cfg.sub_min, self.cfg.sub_max + 1)):
+                    sub_scores[n] = sub_scores.get(n, 0.0) + sub_probs[i] * weight * 10
+            else:
+                # Fallback: count-based voting
+                for pred in preds:
+                    sub_nums = pred.get("sub", [])
+                    for n in sub_nums:
+                        sub_scores[n] = sub_scores.get(n, 0.0) + weight
+
+            # For main: also use probabilities when available, otherwise votes
+            if main_probs is not None and len(main_probs) > 0:
+                for i, n in enumerate(range(self.cfg.main_min, self.cfg.main_max + 1)):
+                    main_scores[n] = main_scores.get(n, 0.0) + main_probs[i] * weight * 10
+            else:
+                for pred in preds:
+                    main_nums = pred.get("main", [])
+                    for n in main_nums:
+                        main_scores[n] = main_scores.get(n, 0.0) + weight
 
         # Rank
         main_ranked = sorted(main_scores.items(), key=lambda x: -x[1])
@@ -340,7 +374,7 @@ def morphological_filter(
 # ---------------------------------------------------------------------------
 
 def generate_recommendations(
-    ensemble: EnsembleModel,
+    ensemble,
     cfg,
     num_groups: int = 5,
     n_per_model: int = 10,
@@ -350,189 +384,117 @@ def generate_recommendations(
     diversity_factor: float = 0.25,
     df: Optional[pd.DataFrame] = None,
 ) -> Dict[str, Any]:
-    """Generate recommendations following recent trends, preferring unique combos.
+    """Generate recommendations by pure statistical sampling.
 
-    Strategy (per user's expert insight):
-    1. Identify CURRENT trends from fusion scores, not long-term averages
-    2. Generate candidates that FOLLOW these trends (clustered, not uniform)
-    3. Among trend-following candidates, prefer LOW-PROBABILITY unique combos
-    4. No forced uniform distribution — real draws are streaky, not balanced
+    Approach: Use FrequencyModel's probability distribution (real statistics
+    from 200 records). Weighted sampling without any scoring/fusion tricks.
+    The probability distribution IS the science.
     """
     logger = get_logger(cfg)
-    logger.info(
-        "Generating %d recommendation groups for %s ...",
-        num_groups, cfg.name,
-    )
+    logger.info("Generating %d recommendation groups for %s ...", num_groups, cfg.name)
 
     from datetime import datetime
 
-    # Step 1: Get model predictions and fusion scores
-    all_preds = ensemble.predict_all(n_per_model=n_per_model)
-    fusion = ensemble.weighted_fusion(all_preds)
-
-    # Step 2: Define trend profile from fusion
-    main_ranked = fusion["main_ranked"]
-    sub_ranked = fusion["sub_ranked"]
-    main_scores = {n: s for n, s in main_ranked}
-    sub_scores = {n: s for n, s in sub_ranked}
-
+    # Get the FrequencyModel's probability distribution (pure statistics)
+    freq_model = ensemble.models.get('f') or ensemble.models.get('frequency')
+    if freq_model is None:
+        # Fallback: find first model with probs
+        for m in ensemble.models.values():
+            if hasattr(m, 'main_probs') and len(m.main_probs) > 0:
+                freq_model = m
+                break
+    
+    if freq_model is None or not hasattr(freq_model, 'main_probs'):
+        return {"groups": [], "hot_numbers": [], "cold_numbers": [],
+                "model_weights": {}, "timestamp": "", "candidates_evaluated": 0}
+    
+    main_probs = freq_model.main_probs
+    sub_probs = freq_model.sub_probs
     main_range = list(range(cfg.main_min, cfg.main_max + 1))
     sub_range = list(range(cfg.sub_min, cfg.sub_max + 1))
 
-    # Identify trend zones: top 40% numbers define the "hot zone"
-    hot_cutoff = int(len(main_ranked) * 0.4)
-    hot_main = [n for n, _ in main_ranked[:hot_cutoff]]
-    cold_main = [n for n, _ in main_ranked[-int(len(main_ranked)*0.3):]]
-    hot_sub = [n for n, _ in sub_ranked[:max(3, len(sub_ranked)//3)]]
-
-    # Step 3: Generate candidates deterministically from fusion scores
-    # Seed RNG with fusion scores hash — same scores = same candidates
-    seed_hash = hash((tuple(n for n, _ in main_ranked[:30]),
-                      tuple(n for n, _ in sub_ranked[:10])))
-    rng = random.Random(seed_hash)
-
-    candidates: List[Dict[str, Any]] = []
-    used_combos: set = set()
-    attempts = 0
-
-    # Historical check: build set of all past red-ball combos
+    # Build historical set for comparison
     historical_sets = []
     if df is not None:
         for _, row in df.iterrows():
             hist = tuple(sorted([int(row[c]) for c in cfg.main_cols]))
             historical_sets.append(hist)
 
-    while len(candidates) < max_candidates and attempts < max_candidates * 3:
-        attempts += 1
+    # Seeded RNG for determinism
+    seed_hash = hash((tuple(main_probs[:10]), tuple(sub_probs[:5])))
+    rng = random.Random(seed_hash)
 
-        # Core insight: pick mostly from hot zone (follow trend),
-        # some from cold zone (surprise element), avoid mid-range
-        r = rng.random()
-        if r < 0.6:
-            main_pool = hot_main
-        elif r < 0.85:
-            main_pool = cold_main
-        else:
-            main_pool = main_range
+    # Generate candidates by pure weighted sampling
+    candidates = []
+    used_combos = set()
 
-        sub_pool = hot_sub if rng.random() < 0.6 else sub_range
+    for _ in range(max_candidates * 3):
+        # Weighted sampling for main numbers
+        pool_m = list(main_range)
+        w_m = list(main_probs)
+        main_cand = []
+        for _ in range(cfg.main_count):
+            idx = rng.choices(range(len(pool_m)), weights=w_m, k=1)[0]
+            main_cand.append(pool_m.pop(idx))
+            w_m.pop(idx)
+            if w_m:
+                w_m = [ww / sum(w_m) for ww in w_m]
+        main_cand = sorted(main_cand)
 
-        main_candidate = sorted(rng.sample(main_pool, cfg.main_count))
-        sub_candidate = sorted(rng.sample(sub_pool, cfg.sub_count))
+        # Weighted sampling for sub numbers
+        pool_s = list(sub_range)
+        w_s = list(sub_probs)
+        sub_cand = []
+        for _ in range(cfg.sub_count):
+            idx = rng.choices(range(len(pool_s)), weights=w_s, k=1)[0]
+            sub_cand.append(pool_s.pop(idx))
+            w_s.pop(idx)
+            if w_s:
+                w_s = [ww / sum(w_s) for ww in w_s]
+        sub_cand = sorted(sub_cand)
 
-        combo_key = (tuple(main_candidate), tuple(sub_candidate))
-        if combo_key in used_combos:
+        combo = (tuple(main_cand), tuple(sub_cand))
+        if combo in used_combos:
             continue
-        used_combos.add(combo_key)
+        used_combos.add(combo)
 
-        # Historical similarity check: skip combos too close to past draws
+        # Historical similarity check
         too_close = False
         for hist in historical_sets:
-            overlap = len(set(main_candidate) & set(hist))
-            if overlap >= 5:  # 5+ same red balls as a historical draw
+            if len(set(main_cand) & set(hist)) >= 5:
                 too_close = True
                 break
         if too_close:
             continue
 
-        # Step 4: Score each candidate — LOWER score = better
-        # Reward trend-following + uniqueness, penalize "average" look
-        score = 0.0
-
-        # a) Individual number scores (higher fusion score = more trend-aligned = better)
-        num_score = sum(main_scores.get(n, 0) for n in main_candidate) / cfg.main_count
-        score -= num_score * 3  # Strong reward for trend-following
-
-        # b) Uniqueness bonus: prefer less-probable combos among trend-followers
-        # Calculate how many numbers are from the hot zone vs cold zone
-        hot_count = sum(1 for n in main_candidate if n in hot_main)
-        cold_count = sum(1 for n in main_candidate if n in cold_main)
-        
-        # A mix of hot + cold is most interesting (follows trend + surprises)
-        # Pure hot is boring -> penalize slightly
-        # Pure cold is too risky -> slight penalty
-        # Hot + 1-2 cold = ideal sweet spot -> bonus
-        ideal_hot_count = cfg.main_count - 2  # e.g., 4 hot + 2 cold for SSQ/6
-        score += abs(hot_count - ideal_hot_count) * 0.3
-
-        # c) Consecutive number bonus: real draws frequently have consecutive pairs
-        consec_pairs = sum(1 for i in range(len(main_candidate)-1)
-                          if main_candidate[i+1] - main_candidate[i] == 1)
-        # Bonus for having 1-2 consecutive pairs (most common in real draws)
-        if consec_pairs == 0:
-            score += 0.8  # Penalty for no consecutive numbers at all
-        elif consec_pairs == 1:
-            score -= 0.3  # Strong bonus for 1 consecutive pair
-        elif consec_pairs == 2:
-            score -= 0.1  # Mild bonus for 2 pairs
-        # 3+ pairs: too many, slight penalty
-        else:
-            score += 0.5
-
-        # d) Span bonus: prefer slightly wider spans (more spread = more interesting)
-        span = max(main_candidate) - min(main_candidate)
-        max_span = cfg.main_max - cfg.main_min
-        # Prefer span in middle-upper range (60-90% of max)
-        ideal_span_min = max_span * 0.55
-        ideal_span_max = max_span * 0.92
-        if span < ideal_span_min:
-            score += (ideal_span_min - span) / max_span * 0.5
-        elif span > ideal_span_max:
-            score += (span - ideal_span_max) / max_span * 0.5
-            
-        candidates.append({
-            "main": main_candidate,
-            "sub": sub_candidate,
-            "score": score,
-        })
-
-    # Sort by score (lower = better)
-    candidates.sort(key=lambda x: x["score"])
-
-    # Step 5: Select final groups with diversity penalty
-    selected = []
-    for cand in candidates:
-        # Apply diversity penalty against already-selected groups
-        penalty = 0.0
-        for sel in selected:
-            overlap = len(set(cand["main"]) & set(sel["main"]))
-            penalty += overlap * diversity_factor
-        cand["score"] += penalty
-
-        selected.append(cand)
-        if len(selected) >= num_groups:
+        candidates.append({"main": main_cand, "sub": sub_cand})
+        if len(candidates) >= max_candidates:
             break
 
-    # Re-sort with penalty and take top N
-    selected.sort(key=lambda x: x["score"])
-    selected = selected[:num_groups]
-
-    # Normalize scores to 0-100 (higher = better)
-    scores = [c["score"] for c in selected]
-    min_s, max_s = min(scores), max(scores)
-    range_s = max_s - min_s if max_s != min_s else 1
-
-    # Assign group numbers
+    # Pick first 5 — probability distribution already ensures proper weighting
     groups = []
-    for i, c in enumerate(selected):
-        norm = (max_s - c["score"]) / range_s * 100  # 100=best, 0=worst
+    for i, c in enumerate(candidates[:num_groups]):
+        # Compute a clean probability-based confidence score
+        main_p = sum(main_probs[main_range.index(n)] for n in c["main"]) * 100
+        sub_p = sum(sub_probs[sub_range.index(n)] for n in c["sub"]) * 100
+        score = round(main_p + sub_p, 1)
         groups.append({
             "index": i + 1,
             "main": c["main"],
             "sub": c["sub"],
-            "score": round(norm, 1),
+            "score": score,
         })
 
-    logger.info(
-        "Generated %d recommendation groups from %d candidates for %s",
-        len(groups), len(candidates), cfg.name,
-    )
+    # Compute hot/cold from probability distribution  
+    main_ranked = sorted([(n, main_probs[i]) for i, n in enumerate(main_range)], key=lambda x: -x[1])
+    sub_ranked = sorted([(n, sub_probs[i]) for i, n in enumerate(sub_range)], key=lambda x: -x[1])
 
+    logger.info("Generated %d recommendation groups for %s", len(groups), cfg.name)
     return {
         "groups": groups,
-        "hot_numbers": hot_main[:5],
-        "cold_numbers": cold_main[:3],
-        "model_weights": getattr(ensemble, 'weights', cfg.ensemble_weights),
+        "hot_numbers": [n for n, _ in main_ranked[:5]],
+        "cold_numbers": [n for n, _ in main_ranked[-3:]],
+        "model_weights": {},
         "timestamp": datetime.now().isoformat(),
         "candidates_evaluated": len(candidates),
     }
