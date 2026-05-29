@@ -10,6 +10,7 @@ from collections import Counter
 from typing import Dict, List, Optional, Tuple, Any, Callable
 
 import numpy as np
+import pandas as pd
 
 from utils.helpers import validate_numbers, validate_numbers_full, get_logger
 
@@ -342,34 +343,20 @@ def generate_recommendations(
     ensemble: EnsembleModel,
     cfg,
     num_groups: int = 5,
-    n_per_model: int = 20,
+    n_per_model: int = 10,
     max_candidates: int = 1000,
     sum_mean: Optional[float] = None,
     sum_std: Optional[float] = None,
-    diversity_factor: float = 0.3,
+    diversity_factor: float = 0.25,
+    df: Optional[pd.DataFrame] = None,
 ) -> Dict[str, Any]:
-    """Generate final recommendation groups using ensemble + filtering.
+    """Generate recommendations following recent trends, preferring unique combos.
 
-    Parameters
-    ----------
-    ensemble         : fitted EnsembleModel instance.
-    cfg              : LotteryConfig instance.
-    num_groups       : number of recommended groups to produce.
-    n_per_model      : predictions per model for ensemble fusion.
-    max_candidates   : max candidate groups to generate before filtering.
-    sum_mean         : historical main sum mean (for z-score filtering).
-    sum_std          : historical main sum std (for z-score filtering).
-    diversity_factor : how much to penalize repeated numbers across groups
-                       (0 = no penalty, 1 = maximum spread).
-
-    Returns
-    -------
-    dict with keys:
-        groups       : list of dicts with keys index, main, sub, score
-        hot_numbers  : list of top hot numbers (from fusion)
-        cold_numbers : list of bottom cold numbers (from fusion)
-        model_weights: dict of weights used
-        timestamp    : generation timestamp
+    Strategy (per user's expert insight):
+    1. Identify CURRENT trends from fusion scores, not long-term averages
+    2. Generate candidates that FOLLOW these trends (clustered, not uniform)
+    3. Among trend-following candidates, prefer LOW-PROBABILITY unique combos
+    4. No forced uniform distribution — real draws are streaky, not balanced
     """
     logger = get_logger(cfg)
     logger.info(
@@ -377,149 +364,176 @@ def generate_recommendations(
         num_groups, cfg.name,
     )
 
-    # Step 1: Get all model predictions
-    all_preds = ensemble.predict_all(n_per_model=n_per_model)
+    from datetime import datetime
 
-    # Step 2: Weighted fusion scores
+    # Step 1: Get model predictions and fusion scores
+    all_preds = ensemble.predict_all(n_per_model=n_per_model)
     fusion = ensemble.weighted_fusion(all_preds)
 
-    # Step 3: Generate candidate groups
-    candidates: List[Dict[str, Any]] = []
+    # Step 2: Define trend profile from fusion
+    main_ranked = fusion["main_ranked"]
+    sub_ranked = fusion["sub_ranked"]
+    main_scores = {n: s for n, s in main_ranked}
+    sub_scores = {n: s for n, s in sub_ranked}
+
     main_range = list(range(cfg.main_min, cfg.main_max + 1))
     sub_range = list(range(cfg.sub_min, cfg.sub_max + 1))
 
-    # Extract top-weighted numbers
-    main_ranked = fusion["main_ranked"]
-    sub_ranked = fusion["sub_ranked"]
-    top_main = [n for n, _ in main_ranked[:cfg.top_hot_count]]
-    top_sub = [n for n, _ in sub_ranked[:cfg.top_hot_count]]
+    # Identify trend zones: top 40% numbers define the "hot zone"
+    hot_cutoff = int(len(main_ranked) * 0.4)
+    hot_main = [n for n, _ in main_ranked[:hot_cutoff]]
+    cold_main = [n for n, _ in main_ranked[-int(len(main_ranked)*0.3):]]
+    hot_sub = [n for n, _ in sub_ranked[:max(3, len(sub_ranked)//3)]]
 
-    # Generate candidates by combining top-weighted numbers
-    attempts = 0
+    # Step 3: Generate candidates deterministically from fusion scores
+    # Seed RNG with fusion scores hash — same scores = same candidates
+    seed_hash = hash((tuple(n for n, _ in main_ranked[:30]),
+                      tuple(n for n, _ in sub_ranked[:10])))
+    rng = random.Random(seed_hash)
+
+    candidates: List[Dict[str, Any]] = []
     used_combos: set = set()
+    attempts = 0
+
+    # Historical check: build set of all past red-ball combos
+    historical_sets = []
+    if df is not None:
+        for _, row in df.iterrows():
+            hist = tuple(sorted([int(row[c]) for c in cfg.main_cols]))
+            historical_sets.append(hist)
 
     while len(candidates) < max_candidates and attempts < max_candidates * 3:
         attempts += 1
 
-        # Mix: mostly from top-ranked pool, some random for diversity
-        if random.random() < 0.7:
-            main_pool = top_main
+        # Core insight: pick mostly from hot zone (follow trend),
+        # some from cold zone (surprise element), avoid mid-range
+        r = rng.random()
+        if r < 0.6:
+            main_pool = hot_main
+        elif r < 0.85:
+            main_pool = cold_main
         else:
             main_pool = main_range
 
-        if random.random() < 0.7:
-            sub_pool = top_sub
-        else:
-            sub_pool = sub_range
+        sub_pool = hot_sub if rng.random() < 0.6 else sub_range
 
-        main_candidate = sorted(random.sample(main_pool, cfg.main_count))
-        sub_candidate = sorted(random.sample(sub_pool, cfg.sub_count))
+        main_candidate = sorted(rng.sample(main_pool, cfg.main_count))
+        sub_candidate = sorted(rng.sample(sub_pool, cfg.sub_count))
 
         combo_key = (tuple(main_candidate), tuple(sub_candidate))
         if combo_key in used_combos:
             continue
         used_combos.add(combo_key)
 
-        # Score the candidate based on fusion scores
-        main_score = sum(fusion["main_scores"].get(n, 0) for n in main_candidate)
-        sub_score = sum(fusion["sub_scores"].get(n, 0) for n in sub_candidate)
-        total_score = main_score + sub_score
+        # Historical similarity check: skip combos too close to past draws
+        too_close = False
+        for hist in historical_sets:
+            overlap = len(set(main_candidate) & set(hist))
+            if overlap >= 5:  # 5+ same red balls as a historical draw
+                too_close = True
+                break
+        if too_close:
+            continue
 
-        # Apply morphological filter
-        if morphological_filter(main_candidate, cfg, sum_mean, sum_std):
-            candidates.append({
-                "main": main_candidate,
-                "sub": sub_candidate,
-                "score": total_score,
-            })
+        # Step 4: Score each candidate — LOWER score = better
+        # Reward trend-following + uniqueness, penalize "average" look
+        score = 0.0
 
-    # Sort by score descending
-    candidates.sort(key=lambda c: -c["score"])
+        # a) Individual number scores (higher fusion score = more trend-aligned = better)
+        num_score = sum(main_scores.get(n, 0) for n in main_candidate) / cfg.main_count
+        score -= num_score * 3  # Strong reward for trend-following
 
-    # Step 4: Select diverse groups
-    selected_groups = _select_diverse_groups(
-        candidates, num_groups, cfg, diversity_factor,
-    )
+        # b) Uniqueness bonus: prefer less-probable combos among trend-followers
+        # Calculate how many numbers are from the hot zone vs cold zone
+        hot_count = sum(1 for n in main_candidate if n in hot_main)
+        cold_count = sum(1 for n in main_candidate if n in cold_main)
+        
+        # A mix of hot + cold is most interesting (follows trend + surprises)
+        # Pure hot is boring -> penalize slightly
+        # Pure cold is too risky -> slight penalty
+        # Hot + 1-2 cold = ideal sweet spot -> bonus
+        ideal_hot_count = cfg.main_count - 2  # e.g., 4 hot + 2 cold for SSQ/6
+        score += abs(hot_count - ideal_hot_count) * 0.3
 
-    # Step 5: Build final output
-    hot_main = [n for n, _ in main_ranked[:cfg.top_hot_count]]
-    cold_main = [n for n, _ in main_ranked[-cfg.top_cold_count:]]
-    hot_sub = [n for n, _ in sub_ranked[:cfg.top_hot_count]]
-    cold_sub = [n for n, _ in sub_ranked[-cfg.top_cold_count:]]
+        # c) Consecutive number bonus: real draws frequently have consecutive pairs
+        consec_pairs = sum(1 for i in range(len(main_candidate)-1)
+                          if main_candidate[i+1] - main_candidate[i] == 1)
+        # Bonus for having 1-2 consecutive pairs (most common in real draws)
+        if consec_pairs == 0:
+            score += 0.8  # Penalty for no consecutive numbers at all
+        elif consec_pairs == 1:
+            score -= 0.3  # Strong bonus for 1 consecutive pair
+        elif consec_pairs == 2:
+            score -= 0.1  # Mild bonus for 2 pairs
+        # 3+ pairs: too many, slight penalty
+        else:
+            score += 0.5
 
-    from datetime import datetime
+        # d) Span bonus: prefer slightly wider spans (more spread = more interesting)
+        span = max(main_candidate) - min(main_candidate)
+        max_span = cfg.main_max - cfg.main_min
+        # Prefer span in middle-upper range (60-90% of max)
+        ideal_span_min = max_span * 0.55
+        ideal_span_max = max_span * 0.92
+        if span < ideal_span_min:
+            score += (ideal_span_min - span) / max_span * 0.5
+        elif span > ideal_span_max:
+            score += (span - ideal_span_max) / max_span * 0.5
+            
+        candidates.append({
+            "main": main_candidate,
+            "sub": sub_candidate,
+            "score": score,
+        })
 
-    result: Dict[str, Any] = {
-        "groups": selected_groups,
-        "hot_numbers": {
-            "main": hot_main,
-            "sub": hot_sub,
-        },
-        "cold_numbers": {
-            "main": cold_main,
-            "sub": cold_sub,
-        },
-        "model_weights": dict(ensemble.weights),
-        "fusion_scores": {
-            "main_top10": main_ranked[:10],
-            "sub_top5": sub_ranked[:5],
-        },
-        "candidates_evaluated": len(candidates),
-        "timestamp": datetime.now().isoformat(),
-    }
+    # Sort by score (lower = better)
+    candidates.sort(key=lambda x: x["score"])
+
+    # Step 5: Select final groups with diversity penalty
+    selected = []
+    for cand in candidates:
+        # Apply diversity penalty against already-selected groups
+        penalty = 0.0
+        for sel in selected:
+            overlap = len(set(cand["main"]) & set(sel["main"]))
+            penalty += overlap * diversity_factor
+        cand["score"] += penalty
+
+        selected.append(cand)
+        if len(selected) >= num_groups:
+            break
+
+    # Re-sort with penalty and take top N
+    selected.sort(key=lambda x: x["score"])
+    selected = selected[:num_groups]
+
+    # Normalize scores to 0-100 (higher = better)
+    scores = [c["score"] for c in selected]
+    min_s, max_s = min(scores), max(scores)
+    range_s = max_s - min_s if max_s != min_s else 1
+
+    # Assign group numbers
+    groups = []
+    for i, c in enumerate(selected):
+        norm = (max_s - c["score"]) / range_s * 100  # 100=best, 0=worst
+        groups.append({
+            "index": i + 1,
+            "main": c["main"],
+            "sub": c["sub"],
+            "score": round(norm, 1),
+        })
 
     logger.info(
         "Generated %d recommendation groups from %d candidates for %s",
-        len(selected_groups), len(candidates), cfg.name,
+        len(groups), len(candidates), cfg.name,
     )
 
-    return result
+    return {
+        "groups": groups,
+        "hot_numbers": hot_main[:5],
+        "cold_numbers": cold_main[:3],
+        "model_weights": getattr(ensemble, 'weights', cfg.ensemble_weights),
+        "timestamp": datetime.now().isoformat(),
+        "candidates_evaluated": len(candidates),
+    }
 
-
-def _select_diverse_groups(
-    candidates: List[Dict[str, Any]],
-    num_groups: int,
-    cfg,
-    diversity_factor: float = 0.3,
-) -> List[Dict[str, Any]]:
-    """Select diverse groups from ranked candidates.
-
-    Greedy selection: pick highest-scoring, then add groups that
-    maximize overlap penalty (diversity).
-    """
-    if not candidates:
-        return []
-
-    selected = [candidates[0]]
-    used_numbers = set(candidates[0]["main"])
-
-    while len(selected) < num_groups and len(selected) < len(candidates):
-        best_candidate = None
-        best_score = -float("inf")
-
-        for cand in candidates[1:]:
-            if cand in selected:
-                continue
-
-            main_set = set(cand["main"])
-            overlap = len(main_set & used_numbers)
-
-            # Penalize overlap
-            diversity_penalty = overlap * diversity_factor / cfg.main_count
-            adjusted_score = cand["score"] * (1 - diversity_penalty)
-
-            if adjusted_score > best_score:
-                best_score = adjusted_score
-                best_candidate = cand
-
-        if best_candidate is None:
-            break
-
-        selected.append(best_candidate)
-        used_numbers.update(best_candidate["main"])
-
-    # Renumber indices
-    for i, g in enumerate(selected):
-        g["index"] = i + 1
-
-    return selected

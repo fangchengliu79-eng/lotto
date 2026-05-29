@@ -47,9 +47,10 @@ class BaseStatisticalModel(ABC):
         """Generate full predictions (main + sub)."""
         mains = self.predict_main(n_predictions)
         subs = self.predict_sub(n_predictions)
+        n = min(len(mains), len(subs))
         return [
             {"main": mains[i], "sub": subs[i], "model": self.name}
-            for i in range(n_predictions)
+            for i in range(n)
         ]
 
     def _validate_prediction(self, main: List[int], sub: List[int]) -> bool:

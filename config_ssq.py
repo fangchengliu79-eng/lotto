@@ -19,4 +19,5 @@ SSQ = LotteryConfig(
     },
     streamlit_title="🔴 双色球数据分析与预测系统",
     streamlit_icon="🔴",
+    top_hot_count=18,  # 双色球33个红球，覆盖一半以上
 )

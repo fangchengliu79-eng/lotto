@@ -82,18 +82,20 @@ def pred_card(rec, matches=None, active=True, cfg=None):
     gm = matches.get(g, {}) if matches else {}
     mh = set(gm.get("main_matches", [])) if gm else set()
     sh = set(gm.get("sub_matches", [])) if gm else set()
+    sc = rec["score"]
     mb = "".join(ball(n, "main", n in mh) for n in rec["main"])
     sb = "".join(ball(n, "sub", n in sh) for n in rec["sub"])
-    sc = rec["score"] * 100
     ht = ""
+
     if gm and gm.get("total_hits", 0) > 0:
-        ht = f"<div style='margin-top:0.5rem;font-size:0.85rem;color:#eab308;font-weight:600;'>🎯 命中 {gm['main_hits']}{cfg.main_label} + {gm['sub_hits']}{cfg.sub_label} = {gm['total_hits']}个</div>"
+        m = gm
+        ht = (f"<div style='margin-top:0.5rem;font-size:0.85rem;color:#eab308;font-weight:600;'>🎯 命中 {m['main_hits']}{cfg.main_label} + {m['sub_hits']}{cfg.sub_label} = {m['total_hits']}个</div>")
     elif active:
         ht = "<div style='margin-top:0.5rem;font-size:0.85rem;color:#64748b;'>⏳ 待开奖</div>"
     return (f"<div class='glass-card glow' style='padding:1rem;'>"
             f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;'>"
             f"<span style='font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#94a3b8;'>第{g}组</span>"
-            f"<span style='font-size:0.75rem;color:#2563eb;font-weight:600;font-family:JetBrains Mono,monospace;'>综合得分 {sc:.2f}%</span></div>"
+            f"<span style='font-size:0.75rem;color:#2563eb;font-weight:600;font-family:JetBrains Mono,monospace;'>综合得分 {sc:.1f}</span></div>"
             f"<div style='margin-bottom:0.5rem;'><div style='font-size:0.7rem;color:#64748b;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;'>{cfg.main_label} · {cfg.main_count}码</div><div>{mb}</div></div>"
             f"<div style='margin-bottom:0.5rem;'><div style='font-size:0.7rem;color:#64748b;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;'>{cfg.sub_label} · {cfg.sub_count}码</div><div>{sb}</div></div>"
             f"<div style='font-size:0.7rem;color:#64748b;margin-top:0.35rem;'>📊 {rec.get('reason','综合评分 '+str(round(rec['score'],1)))}</div>{ht}</div>")
@@ -147,7 +149,7 @@ def render_lottery(cfg):
                     sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
                     for m in md.values(): m.fit(mn, sn)
                     ensemble = EnsembleModel(md, cfg)
-                    r2 = generate_recommendations(ensemble, cfg, num_groups=5)
+                    r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
                     save_prediction(period=str(int(df.iloc[0]["period"])+1), recommendations=r2.get("groups",[]), cfg=cfg)
                     st.rerun()
         else:
@@ -202,9 +204,48 @@ def render_lottery(cfg):
                         sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
                         for m in md.values(): m.fit(mn, sn)
                         ensemble = EnsembleModel(md, cfg)
-                        r2 = generate_recommendations(ensemble, cfg, num_groups=5)
+                        r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
                         save_prediction(period=np_, recommendations=r2.get("groups",[]), cfg=cfg)
                         st.rerun()
+            if st.button("🔄 重新计算", key=f"recalc_{cfg.short}", help="用最新算法重新评估，排名有变化才更新"):
+                with st.spinner("正在重新计算..."):
+                    # 用最新算法重新生成
+                    md = {"f": FrequencyModel(cfg), "p": PoissonModel(cfg),
+                          "e": ExponentialSmoothingModel(cfg, alpha=0.3), "m": MonteCarloModel(cfg)}
+                    md["m"].n_simulations = 20000
+                    mn = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in df.iterrows()])
+                    sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
+                    for m in md.values(): m.fit(mn, sn)
+                    ensemble = EnsembleModel(md, cfg)
+                    r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
+                    new_groups = r2.get("groups", [])
+                    
+                    # 对比现有预测，排名没变就不更新
+                    latest_p = str(df.iloc[0]["period"])
+                    current_pred = get_latest_prediction(cfg) if get_latest_prediction(cfg) else None
+                    
+                    needs_update = False
+                    if current_pred and current_pred.get("recommendations"):
+                        old_groups = current_pred["recommendations"]
+                        # 比较各组号码是否相同
+                        old_sets = [set(g["main"]) for g in old_groups]
+                        new_sets = [set(g["main"]) for g in new_groups]
+                        if old_sets != new_sets:
+                            needs_update = True
+                    else:
+                        needs_update = True
+                    
+                    if needs_update:
+                        # 删除旧预测，保存新预测
+                        all_p = get_all_predictions(cfg)
+                        remaining = [p for p in all_p if p["period"] != latest_p]
+                        from utils.predictions import _save_all
+                        _save_all(remaining, cfg)
+                        save_prediction(period=latest_p, recommendations=new_groups, cfg=cfg)
+                        st.success("✅ 算法有更新，推荐号码已刷新")
+                    else:
+                        st.info("ℹ️ 算法评分排名无变化，推荐号码保持不变")
+                    st.rerun()
 
     # ──── 数据分析 ────
     elif page == "📊 数据分析":
