@@ -118,17 +118,44 @@ def hist_row(rec, mm=None, cfg=None):
 
 @st.cache_data(ttl=3600, show_spinner="正在加载数据...")
 def load_lottery(cfg_key):
-    return update_data(DLT if cfg_key == "dlt" else SSQ)
+    """加载数据，包含文件修改时间作为缓存key，新数据自动触发刷新"""
+    import os
+    _cfg = DLT if cfg_key == "dlt" else SSQ
+    # 用文件修改时间作为隐式缓存key，CSV更新时自动刷新
+    csv_path = str(_cfg.history_csv)
+    mtime = os.path.getmtime(csv_path) if os.path.exists(csv_path) else 0
+    return update_data(_cfg), mtime
 
 
 def render_lottery(cfg):
     """渲染单个彩种内容"""
-    df = load_lottery(cfg.short)
+    df, _ = load_lottery(cfg.short)
     if df is None or len(df) == 0:
         st.error(f"无法获取{cfg.name}数据"); st.stop()
     st.info(f"✅ 已加载 {len(df):,} 期 {cfg.name} 数据 · {cfg.total_combinations():,} 种组合")
 
     auto_compare_latest(df, cfg)
+
+    # 检测是否有新数据加入：如果最新数据的期号 > 最新预测的期号，自动生成新预测
+    latest_data_period = str(df.iloc[0]["period"])
+    lp_check = get_latest_prediction(cfg)
+    needs_new_prediction = False
+    if lp_check is None:
+        needs_new_prediction = True
+    else:
+        try:
+            if int(latest_data_period) > int(lp_check["period"]):
+                needs_new_prediction = True
+        except (ValueError, KeyError):
+            pass
+    
+    if needs_new_prediction:
+        with st.spinner(f"检测到新数据，正在生成{cfg.name}预测..."):
+            ensemble = EnsembleModel({}, cfg)
+            r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
+            next_period = str(int(latest_data_period) + 1)
+            save_prediction(period=next_period, recommendations=r2.get("groups",[]), cfg=cfg)
+            st.rerun()
 
     # 子页面导航
     page = st.radio("", ["🎯 预测结果", "📊 数据分析", "📜 预测历史", "📈 回测"], 
