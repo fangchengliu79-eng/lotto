@@ -1,18 +1,21 @@
 """
-Ensemble model - weighted fusion of multiple prediction models + recommendation generation
+Ensemble model - enhanced with international best practices
 
 Incorporates:
 - Frequency analysis (full history + sliding window)
+- Decay-weighted frequency (0.98^weeks)  ← NEW
+- Gap/recency analysis                   ← NEW
 - Poisson overdue probability
 - Exponential smoothing (time series trend)
-- Monte Carlo simulation
 - Markov chain transition probability
-- Bayesian probability estimation
+- Bayesian log-space fusion              ← NEW
+- CRF-like global combination scoring    ← NEW
 
 FIVE STRATEGIES:
 Each group uses a DIFFERENT reasoning approach with its own model and scoring logic.
 """
 
+import math
 import random
 from collections import Counter
 from typing import Dict, List, Optional, Tuple, Any
@@ -33,24 +36,28 @@ class EnsembleModel:
         self.logger = get_logger(cfg)
 
     def _get_model_probs(self, df):
-        """Compute ensemble probability for each number using multiple algorithms.
+        """Compute probability distributions using multiple algorithms.
+        
+        NEW: Decay-weighted frequency + gap/recency analysis added as signals.
+        Ensemble uses Bayesian log-space fusion instead of linear average.
         
         Also saves individual model probabilities as self._model_main_probs and
         self._model_sub_probs for strategy-based selection.
         
         Returns:
-            main_probs: np.ndarray of length main_range, probabilities for each main number
-            sub_probs: np.ndarray of length sub_range, probabilities for each sub number
+            main_probs: np.ndarray of length main_range
+            sub_probs: np.ndarray of length sub_range
         """
         cfg = self.cfg
         main_range_size = cfg.main_max - cfg.main_min + 1
         sub_range_size = cfg.sub_max - cfg.sub_min + 1
         
-        # Extract number arrays
+        # Extract number arrays (chronological: index 0 = newest draw)
         main_nums = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in df.iterrows()])
         sub_nums = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
-        
         n_draws = len(df)
+        
+        # Raw counts
         main_counts = np.zeros(main_range_size)
         sub_counts = np.zeros(sub_range_size)
         for row in main_nums:
@@ -61,7 +68,7 @@ class EnsembleModel:
                 sub_counts[n - cfg.sub_min] += 1
         
         # ====================================================================
-        # 1) BASE FREQUENCY (full history)
+        # 1) BASE FREQUENCY (full history, equal weight)
         # ====================================================================
         main_freq_full = (main_counts + 1) / (main_counts.sum() + main_range_size)
         sub_freq_full = (sub_counts + 1) / (sub_counts.sum() + sub_range_size)
@@ -82,7 +89,24 @@ class EnsembleModel:
         sub_win = (sub_win_counts + 1) / (sub_win_counts.sum() + sub_range_size)
         
         # ====================================================================
-        # 3) BAYESIAN PROBABILITY (Beta(1,1) prior)
+        # 3) NEW: DECAY-WEIGHTED FREQUENCY (0.98^draws)
+        #    Recent draws contribute more, old draws fade out.
+        #    This naturally de-emphasizes ancient hot numbers.
+        # ====================================================================
+        decay_factor = 0.98
+        main_decay_counts = np.zeros(main_range_size)
+        sub_decay_counts = np.zeros(sub_range_size)
+        for idx in range(n_draws):
+            w = decay_factor ** idx  # idx=0(newest) gets highest weight
+            for n in main_nums[idx]:
+                main_decay_counts[n - cfg.main_min] += w
+            for n in sub_nums[idx]:
+                sub_decay_counts[n - cfg.sub_min] += w
+        main_decay = (main_decay_counts + 1) / (main_decay_counts.sum() + main_range_size)
+        sub_decay = (sub_decay_counts + 1) / (sub_decay_counts.sum() + sub_range_size)
+        
+        # ====================================================================
+        # 4) BAYESIAN PROBABILITY (Beta(1,1) prior)
         # ====================================================================
         main_total = main_counts.sum()
         sub_total = sub_counts.sum()
@@ -90,7 +114,7 @@ class EnsembleModel:
         sub_bayes = (sub_counts + 1) / (sub_total + sub_range_size)
         
         # ====================================================================
-        # 4) POISSON OVERDUE PROBABILITY
+        # 5) POISSON OVERDUE PROBABILITY
         # ====================================================================
         main_poisson = np.ones(main_range_size) * 0.5
         sub_poisson = np.ones(sub_range_size) * 0.5
@@ -123,7 +147,7 @@ class EnsembleModel:
         sub_poisson = sub_poisson / sub_poisson.sum()
         
         # ====================================================================
-        # 5) MARKOV CHAIN
+        # 6) MARKOV CHAIN
         # ====================================================================
         main_markov = np.ones(main_range_size) * 0.5
         sub_markov = np.ones(sub_range_size) * 0.5
@@ -136,20 +160,11 @@ class EnsembleModel:
                 transitions.append((now, next_))
             if transitions:
                 appeared_before = [t for t in transitions if t[0]]
-                if appeared_before:
-                    p_given_appeared = sum(1 for t in appeared_before if t[1]) / len(appeared_before)
-                else:
-                    p_given_appeared = 0.3
+                p_given_appeared = sum(1 for t in appeared_before if t[1]) / len(appeared_before) if appeared_before else 0.3
                 absent_before = [t for t in transitions if not t[0]]
-                if absent_before:
-                    p_given_absent = sum(1 for t in absent_before if t[1]) / len(absent_before)
-                else:
-                    p_given_absent = 0.3
+                p_given_absent = sum(1 for t in absent_before if t[1]) / len(absent_before) if absent_before else 0.3
                 last_appeared = n in main_nums[0]
-                if last_appeared:
-                    main_markov[i] = p_given_appeared
-                else:
-                    main_markov[i] = p_given_absent
+                main_markov[i] = p_given_appeared if last_appeared else p_given_absent
         
         for i, n in enumerate(range(cfg.sub_min, cfg.sub_max + 1)):
             transitions = []
@@ -163,20 +178,16 @@ class EnsembleModel:
                 absent_before = [t for t in transitions if not t[0]]
                 p_given_absent = sum(1 for t in absent_before if t[1]) / len(absent_before) if absent_before else 0.3
                 last_appeared = n in sub_nums[0]
-                if last_appeared:
-                    sub_markov[i] = p_given_appeared
-                else:
-                    sub_markov[i] = p_given_absent
+                sub_markov[i] = p_given_appeared if last_appeared else p_given_absent
         
         main_markov = main_markov / main_markov.sum()
         sub_markov = sub_markov / sub_markov.sum()
         
         # ====================================================================
-        # 6) TIME SERIES (Exponential Smoothing)
+        # 7) TIME SERIES (Exponential Smoothing)
         # ====================================================================
         main_ts = np.ones(main_range_size) * 0.5
         sub_ts = np.ones(sub_range_size) * 0.5
-        
         from models.timeseries import ExponentialSmoothingModel
         try:
             es = ExponentialSmoothingModel(cfg, alpha=0.3)
@@ -192,10 +203,63 @@ class EnsembleModel:
         sub_ts = sub_ts / sub_ts.sum()
         
         # ====================================================================
+        # 8) NEW: GAP/RECENCY ANALYSIS
+        #    Track the current absence gap for each number.
+        #    Numbers with unusually long gaps (vs historical) get a boost.
+        #    This is independent of the Poisson model — it measures "how unusual
+        #    is this gap" rather than "how overdue is this number".
+        # ====================================================================
+        main_gap = np.zeros(main_range_size)
+        sub_gap = np.zeros(sub_range_size)
+        
+        for i, n in enumerate(range(cfg.main_min, cfg.main_max + 1)):
+            appearances = [idx for idx, row in enumerate(main_nums) if n in row]
+            if appearances:
+                current_gap = appearances[0]  # index 0 = newest draw
+                # Historical gaps between appearances
+                hist_gaps = []
+                for j in range(len(appearances) - 1):
+                    hist_gaps.append(appearances[j+1] - appearances[j])
+                if hist_gaps:
+                    mean_gap = np.mean(hist_gaps)
+                    std_gap = np.std(hist_gaps) + 0.01
+                    # Z-score: how many std devs is current gap from historical mean?
+                    z = (current_gap - mean_gap) / std_gap
+                    # Sigmoid: z=0→0.5, z=2→0.88, z=-2→0.12
+                    main_gap[i] = 1.0 / (1.0 + math.exp(-z * 0.8))
+                else:
+                    main_gap[i] = 0.5
+            else:
+                # Never appeared — give moderate boost (not extreme)
+                main_gap[i] = 0.7
+        
+        for i, n in enumerate(range(cfg.sub_min, cfg.sub_max + 1)):
+            appearances = [idx for idx, row in enumerate(sub_nums) if n in row]
+            if appearances:
+                current_gap = appearances[0]
+                hist_gaps = []
+                for j in range(len(appearances) - 1):
+                    hist_gaps.append(appearances[j+1] - appearances[j])
+                if hist_gaps:
+                    mean_gap = np.mean(hist_gaps)
+                    std_gap = np.std(hist_gaps) + 0.01
+                    z = (current_gap - mean_gap) / std_gap
+                    sub_gap[i] = 1.0 / (1.0 + math.exp(-z * 0.8))
+                else:
+                    sub_gap[i] = 0.5
+            else:
+                sub_gap[i] = 0.7
+        
+        main_gap = main_gap / main_gap.sum()
+        sub_gap = sub_gap / sub_gap.sum()
+        
+        # ====================================================================
         # Save individual model probs for strategy-based selection
         # ====================================================================
         self._model_main_probs = {
             'frequency': main_freq_full,
+            'decay_frequency': main_decay,
+            'gap_recency': main_gap,
             'sliding_window': main_win,
             'bayesian': main_bayes,
             'poisson': main_poisson,
@@ -204,6 +268,8 @@ class EnsembleModel:
         }
         self._model_sub_probs = {
             'frequency': sub_freq_full,
+            'decay_frequency': sub_decay,
+            'gap_recency': sub_gap,
             'sliding_window': sub_win,
             'bayesian': sub_bayes,
             'poisson': sub_poisson,
@@ -212,39 +278,47 @@ class EnsembleModel:
         }
         
         # ====================================================================
-        # ENSEMBLE: weighted combination of all algorithms
+        # ENSEMBLE: Bayesian log-space fusion
+        #    P(n) ∝ Π P(n|model_i)^w_i
+        #    Unlike linear average, log-space fusion naturally handles
+        #    conflicting evidence: if one model says 0.01 and another says 0.99,
+        #    their geometric mean is ~0.1, not 0.5.
         # ====================================================================
         weights = {
-            'full_freq': 0.25,
-            'sliding_window': 0.20,
-            'bayesian': 0.10,
+            'decay_frequency': 0.20,  # decay-weighted > raw frequency
+            'sliding_window': 0.18,
+            'gap_recency': 0.12,      # NEW signal
             'poisson_overdue': 0.15,
             'markov_chain': 0.15,
-            'time_series': 0.15,
+            'time_series': 0.12,
+            'bayesian': 0.08,
         }
         
-        main_ensemble = (
-            main_freq_full * weights['full_freq'] +
-            main_win * weights['sliding_window'] +
-            main_bayes * weights['bayesian'] +
-            main_poisson * weights['poisson_overdue'] +
-            main_markov * weights['markov_chain'] +
-            main_ts * weights['time_series']
-        )
-        main_ensemble = main_ensemble / main_ensemble.sum()
+        # Bayesian fusion: log-space weighted product
+        eps = 1e-10
+        main_log = np.zeros(main_range_size)
+        sub_log = np.zeros(sub_range_size)
+        model_map = {
+            'decay_frequency': (main_decay, sub_decay),
+            'sliding_window': (main_win, sub_win),
+            'gap_recency': (main_gap, sub_gap),
+            'poisson_overdue': (main_poisson, sub_poisson),
+            'markov_chain': (main_markov, sub_markov),
+            'time_series': (main_ts, sub_ts),
+            'bayesian': (main_bayes, sub_bayes),
+        }
+        for model_name, (mp, sp) in model_map.items():
+            w = weights.get(model_name, 0.10)
+            main_log += w * np.log(mp + eps)
+            sub_log += w * np.log(sp + eps)
         
-        sub_ensemble = (
-            sub_freq_full * weights['full_freq'] +
-            sub_win * weights['sliding_window'] +
-            sub_bayes * weights['bayesian'] +
-            sub_poisson * weights['poisson_overdue'] +
-            sub_markov * weights['markov_chain'] +
-            sub_ts * weights['time_series']
-        )
+        main_ensemble = np.exp(main_log)
+        sub_ensemble = np.exp(sub_log)
+        main_ensemble = main_ensemble / main_ensemble.sum()
         sub_ensemble = sub_ensemble / sub_ensemble.sum()
         
         self.logger.info(
-            f"Ensemble probabilities computed: main_range={main_range_size}, sub_range={sub_range_size}"
+            f"Bayesian ensemble probs computed: main={main_range_size}, sub={sub_range_size}"
         )
         
         return main_ensemble, sub_ensemble
@@ -274,12 +348,93 @@ def _weighted_sample(probs, num_pick, rng, exclude=None):
     return sorted(picked)
 
 
-def _score_combination(main_idxs, sub_idxs, main_probs, sub_probs,
-                       main_range_names, sub_range_names):
-    """Score a combination by sum of individual probabilities."""
-    m_score = sum(main_probs[i] for i in main_idxs)
-    s_score = sum(sub_probs[i] for i in sub_idxs)
-    return m_score + s_score
+def _bayesian_fusion(model_probs_dict, weights_dict, n, eps=1e-10):
+    """Bayesian log-space fusion of multiple probability distributions.
+    
+    P(n) ∝ exp(Σ w_i * log(P_i(n)))
+    """
+    log_p = np.zeros(n)
+    for name, prob in model_probs_dict.items():
+        w = weights_dict.get(name, 0.1)
+        log_p += w * np.log(prob + eps)
+    result = np.exp(log_p)
+    return result / result.sum()
+
+
+def _crf_score(main_vals, sub_vals, main_probs, sub_probs, cfg):
+    """CRF-like global combination scoring.
+    
+    Not just sum of individual probabilities — evaluates the FULL combination
+    for structural coherence. This is the key insight from CRF decoding:
+    the best individual numbers don't necessarily make the best combination.
+    
+    Scoring factors:
+    1. Base: sum of individual number probabilities from the strategy's model
+    2. Consecutive penalty: too many consecutive numbers = unnatural
+    3. Sum fitness: reward sums in the typical range
+    4. Odd/even balance: reward roughly balanced parity
+    5. Span fitness: reward reasonable spread across the number range
+    6. Section distribution: reward even spread across low/mid/high sections
+    """
+    m = sorted(main_vals)
+    s = sorted(sub_vals)
+    count = len(m)
+    
+    # 1. Base probability score
+    try:
+        main_range = list(range(cfg.main_min, cfg.main_max + 1))
+        sub_range = list(range(cfg.sub_min, cfg.sub_max + 1))
+        base = sum(main_probs[main_range.index(n)] for n in m)
+        base += sum(sub_probs[sub_range.index(n)] for n in s)
+    except (ValueError, IndexError):
+        base = 0.0
+    
+    # 2. Consecutive penalty
+    consec_streaks = 1
+    max_streak = 1
+    for i in range(1, len(m)):
+        if m[i] == m[i-1] + 1:
+            consec_streaks += 1
+            max_streak = max(max_streak, consec_streaks)
+        else:
+            consec_streaks = 1
+    # 2 in a row is OK, 3+ is penalized progressively
+    consec_ok = max_streak - 1  # 0 for no consec, 1 for pair, 2 for triple...
+    consec_penalty = max(0, consec_ok - 1) * 0.04  # only penalize triple+
+    
+    # 3. Sum fitness
+    total = sum(m)
+    # Expected sum range differs by game
+    mid_point = (cfg.main_min + cfg.main_max) / 2
+    expected_sum = mid_point * count
+    sum_dev = abs(total - expected_sum) / expected_sum
+    sum_penalty = sum_dev * 0.03
+    
+    # 4. Odd/even balance
+    odd = sum(1 for v in m if v % 2 == 1)
+    expected_odd = count / 2
+    odd_dev = abs(odd - expected_odd) / expected_odd if expected_odd > 0 else 0
+    odd_penalty = min(odd_dev * 0.03, 0.03)  # cap at 0.03
+    
+    # 5. Span fitness
+    span = m[-1] - m[0]
+    range_size = cfg.main_max - cfg.main_min
+    expected_span = range_size * 0.6
+    span_dev = abs(span - expected_span) / expected_span if expected_span > 0 else 0
+    span_penalty = span_dev * 0.02
+    
+    # 6. Section distribution: divide range into 3 sections, penalize clustering
+    section_size = (cfg.main_max - cfg.main_min + 1) / 3
+    sections = [0, 0, 0]
+    for v in m:
+        s_idx = min(2, int((v - cfg.main_min) / section_size))
+        sections[s_idx] += 1
+    # Ideal: roughly count/3 per section
+    section_cluster = max(sections) - min(sections)
+    section_penalty = (section_cluster / count) * 0.02
+    
+    final = base - consec_penalty - sum_penalty - odd_penalty - span_penalty - section_penalty
+    return final
 
 
 def generate_recommendations(
@@ -293,39 +448,30 @@ def generate_recommendations(
     diversity_factor: float = 0.25,
     df: Optional[pd.DataFrame] = None,
 ) -> Dict[str, Any]:
-    """Generate recommendations using 5 DIFFERENT reasoning strategies.
+    """Generate recommendations using 5 strategies + CRF global scoring.
     
-    Each strategy is INDEPENDENT — they use different models and different
-    selection criteria to produce different groups. They are NOT deduplicated
-    against each other; overlap between strategies is natural and acceptable.
+    Each strategy:
+    1. Builds its own fused probability distribution (Bayesian fusion of relevant signals)
+    2. Generates candidate combinations via weighted sampling
+    3. Scores each combination using CRF-like global scoring (structural coherence)
+    4. Picks the best combination
     
-    Strategies and their reasoning:
-    1. 高频热号 — Simple: pick the numbers that appear most often in history.
-       Red + blue both from the frequency model.
-    
-    2. 近期趋势 — Look at which numbers are "warming up" in recent draws.
-       Not just the most frequent in last 50, but which ones show rising frequency.
-       Red + blue both from the sliding window + trend analysis.
-    
-    3. 追冷 — Among cold numbers, which show signs of "coming back"?
-       Pure overdue is too blunt — we combine overdue score with recent warming signals
-       to find cold numbers most likely to break their cold streak.
-    
-    4. 马尔可夫 — Given the last draw's numbers, which numbers are most likely
-       to appear next based on historical transition patterns?
-    
-    5. 平衡 — Avoid both extreme hot and extreme cold. Pick from mid-frequency zone
-       with structural balance (sum, odd/even, span).
+    Strategies:
+    1. 🔥高频热号 — Decay-weighted frequency (recent > old)
+    2. 📈近期趋势 — Sliding window + trend boost
+    3. ❄️追冷 — Cold numbers with gap recency signal
+    4. 🔗马尔可夫 — Markov transition + neighborhood
+    5. ⚖️平衡 — Mid-frequency with structural balance
     """
     logger = get_logger(cfg)
-    logger.info("Generating %d recommendation groups via 5-strategy approach for %s ...", num_groups, cfg.name)
+    logger.info("CRF-enhanced 5-strategy generation for %s ...", cfg.name)
     
     if df is None:
-        logger.error("df is required for ensemble probability computation")
+        logger.error("df is required")
         return {"groups": [], "hot_numbers": [], "cold_numbers": [],
                 "model_weights": {}, "timestamp": str(datetime.now()), "candidates_evaluated": 0}
     
-    # Step 1: Compute ensemble probabilities (also saves individual model probs)
+    # Compute ensemble probabilities (also saves individual model probs)
     main_probs, sub_probs = ensemble._get_model_probs(df)
     
     main_range = list(range(cfg.main_min, cfg.main_max + 1))
@@ -333,7 +479,7 @@ def generate_recommendations(
     main_n = len(main_range)
     sub_n = len(sub_range)
     
-    # Also get the raw count data (not just probabilities) for trend calculation
+    # Precompute helper data
     cfg2 = cfg
     main_counts = np.zeros(main_n)
     sub_counts = np.zeros(sub_n)
@@ -346,7 +492,6 @@ def generate_recommendations(
         for n in row:
             sub_counts[n - cfg2.sub_min] += 1
     
-    # Recent window counts for trend detection
     w50 = min(50, len(df))
     main_win_counts = np.zeros(main_n)
     sub_win_counts = np.zeros(sub_n)
@@ -357,262 +502,200 @@ def generate_recommendations(
         for n in row:
             sub_win_counts[n - cfg2.sub_min] += 1
     
-    # ========================================================================
-    # Strategy 1: 高频热号
-    # Reasoning: Full-history frequency. Which numbers appear most often?
-    # Simple, direct — no additional filtering or modification.
-    # ========================================================================
-    m1_probs = ensemble._model_main_probs['frequency']
-    s1_probs = ensemble._model_sub_probs['frequency']
-    m1_idxs = sorted(np.argsort(m1_probs)[::-1][:cfg.main_count])
-    s1_idxs = sorted(np.argsort(s1_probs)[::-1][:cfg.sub_count])
-    main_1 = sorted([main_range[i] for i in m1_idxs])
-    sub_1 = sorted([sub_range[i] for i in s1_idxs])
-    reason_1 = "高频热号: 200期全频历史出现频率最高的号码"
-    
-    # ========================================================================
-    # Strategy 2: 近期趋势
-    # Reasoning: Don't just pick the top recent numbers. Look at which numbers
-    # are "warming up" — their frequency in the recent 50 draws is higher than
-    # their baseline frequency. A number going from 5% to 12% in the last 50
-    # draws is more interesting than a number that's always at 12%.
-    # ========================================================================
-    m2_probs = ensemble._model_main_probs['sliding_window']
-    s2_probs = ensemble._model_sub_probs['sliding_window']
-    
-    # Compute "trend boost": recent share vs historical share
     epsilon = 1e-6
     main_hist_share = main_counts / (main_counts.sum() + epsilon)
     main_recent_share = main_win_counts / (main_win_counts.sum() + epsilon)
-    # Trend boost = how much more this number appears in recent history vs all history
-    main_trend_boost = np.maximum(0, main_recent_share - main_hist_share)
-    # Smooth and combine: primary = window prob, boost = trend
-    m2_combined = m2_probs + main_trend_boost * 0.3
-    m2_combined = m2_combined / m2_combined.sum()
-    
     sub_hist_share = sub_counts / (sub_counts.sum() + epsilon)
     sub_recent_share = sub_win_counts / (sub_win_counts.sum() + epsilon)
+    
+    def _run_strategy(strategy_probs_m, strategy_probs_s, rng_seed, n_candidates=500):
+        """Run one strategy: generate candidates, score with CRF, pick best."""
+        rng = random.Random(rng_seed)
+        best_combo = None
+        best_score = -999
+        
+        for _ in range(n_candidates):
+            m_ids = _weighted_sample(strategy_probs_m, cfg.main_count, rng)
+            s_ids = _weighted_sample(strategy_probs_s, cfg.sub_count, rng)
+            m_vals = [main_range[i] for i in m_ids]
+            s_vals = [sub_range[i] for i in s_ids]
+            
+            sc = _crf_score(m_vals, s_vals, strategy_probs_m, strategy_probs_s, cfg)
+            if sc > best_score:
+                best_score = sc
+                best_combo = (m_ids, s_ids)
+        
+        m_ids, s_ids = best_combo
+        return sorted([main_range[i] for i in m_ids]), sorted([sub_range[i] for i in s_ids])
+    
+    # ========================================================================
+    # Strategy 1: 🔥高频热号 (Decay-weighted)
+    #    Uses decay_frequency + gap_recency via Bayesian fusion.
+    #    CRF scoring ensures the combination is structurally sound, not just
+    #    a collection of the hottest individual numbers.
+    # ========================================================================
+    m1_dict = {
+        'decay': ensemble._model_main_probs['decay_frequency'],
+        'gap': ensemble._model_main_probs['gap_recency'],
+    }
+    s1_dict = {
+        'decay': ensemble._model_sub_probs['decay_frequency'],
+        'gap': ensemble._model_sub_probs['gap_recency'],
+    }
+    w1 = {'decay': 0.7, 'gap': 0.3}
+    m1_fused = _bayesian_fusion(m1_dict, w1, main_n)
+    s1_fused = _bayesian_fusion(s1_dict, w1, sub_n)
+    
+    main_1, sub_1 = _run_strategy(m1_fused, s1_fused, 101)
+    reason_1 = "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
+    
+    # ========================================================================
+    # Strategy 2: 📈近期趋势
+    #    Sliding window + trend boost (recent share - historical share).
+    #    Numbers with rising frequency get priority.
+    # ========================================================================
+    m2_raw = ensemble._model_main_probs['sliding_window']
+    s2_raw = ensemble._model_sub_probs['sliding_window']
+    
+    main_trend_boost = np.maximum(0, main_recent_share - main_hist_share)
+    m2_boosted = m2_raw + main_trend_boost * 0.4
+    
     sub_trend_boost = np.maximum(0, sub_recent_share - sub_hist_share)
-    s2_combined = s2_probs + sub_trend_boost * 0.3
+    s2_boosted = s2_raw + sub_trend_boost * 0.4
     
-    # Generate candidates by weighted sampling from combined trend scores
-    rng2 = random.Random(202)
-    best_main2 = None
-    best_sub2 = None
-    best_score2 = -1
-    for _ in range(500):
-        m_ids = _weighted_sample(m2_combined, cfg.main_count, rng2)
-        s_ids = _weighted_sample(s2_combined, cfg.sub_count, rng2)
-        sc = _score_combination(m_ids, s_ids, m2_combined, s2_combined,
-                                main_range, sub_range)
-        if sc > best_score2:
-            best_score2 = sc
-            best_main2 = m_ids
-            best_sub2 = s_ids
-    main_2 = sorted([main_range[i] for i in best_main2])
-    sub_2 = sorted([sub_range[i] for i in best_sub2])
-    reason_2 = "近期趋势: 最近50期走高趋势最明显的号码"
+    m2_fused = _bayesian_fusion(
+        {'window_boost': m2_boosted, 'decay': ensemble._model_main_probs['decay_frequency']},
+        {'window_boost': 0.65, 'decay': 0.35}, main_n)
+    s2_fused = _bayesian_fusion(
+        {'window_boost': s2_boosted, 'decay': ensemble._model_sub_probs['decay_frequency']},
+        {'window_boost': 0.65, 'decay': 0.35}, sub_n)
+    
+    main_2, sub_2 = _run_strategy(m2_fused, s2_fused, 202)
+    reason_2 = "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
     
     # ========================================================================
-    # Strategy 3: 追冷
-    # Reasoning: Pure "most overdue" is stupid — a number that hasn't appeared
-    # in 100 draws but shows no signs of life is a dead number. Instead, look at
-    # COLD numbers (bottom 40% by frequency) that show WARMING signs:
-    # - Their share of recent draws is higher than their share of all draws
-    # - They have a positive frequency trend
-    # Among these warming cold numbers, pick the best combination.
+    # Strategy 3: ❄️追冷
+    #    Cold numbers (bottom 40% by frequency) with gap recency signal.
+    #    Gap recency measures "unusually long absence" better than raw Poisson.
     # ========================================================================
-    m3_probs = ensemble._model_main_probs['poisson']
-    s3_probs = ensemble._model_sub_probs['poisson']
-    
-    # Identify cold numbers: bottom 40% by total frequency
-    main_freq_rank = np.argsort(main_counts)  # ascending = coldest first
+    main_freq_rank = np.argsort(main_counts)
     sub_freq_rank = np.argsort(sub_counts)
-    cold_threshold_m = max(1, int(main_n * 0.4))
-    cold_threshold_s = max(1, int(sub_n * 0.4))
-    cold_main_idxs = set(main_freq_rank[:cold_threshold_m])
-    cold_sub_idxs = set(sub_freq_rank[:cold_threshold_s])
+    cold_th_m = max(1, int(main_n * 0.4))
+    cold_th_s = max(1, int(sub_n * 0.4))
+    cold_m = set(main_freq_rank[:cold_th_m])
+    cold_s = set(sub_freq_rank[:cold_th_s])
     
-    # Compute warming score for cold numbers
-    # warming = recent_share / (historical_share + epsilon)
-    # Higher ratio = the number is appearing more recently vs its baseline
-    main_warming = np.zeros(main_n)
+    m3_gap = ensemble._model_main_probs['gap_recency']
+    s3_gap = ensemble._model_sub_probs['gap_recency']
+    
+    # Cold strategy: emphasize cold numbers, boost ones with high gap scores
+    m3_strat = np.zeros(main_n)
     for i in range(main_n):
-        if main_hist_share[i] > epsilon:
-            main_warming[i] = main_recent_share[i] / main_hist_share[i]
-    
-    sub_warming = np.zeros(sub_n)
-    for i in range(sub_n):
-        if sub_hist_share[i] > epsilon:
-            sub_warming[i] = sub_recent_share[i] / sub_hist_share[i]
-    
-    # Build strategy score: for cold numbers, combine overdue and warming
-    # For non-cold numbers, give them low weight
-    m3_strategy = np.zeros(main_n)
-    for i in range(main_n):
-        if i in cold_main_idxs:
-            # Cold number: overdue + warming bonus
-            m3_strategy[i] = m3_probs[i] * 0.6 + main_warming[i] * 0.4
+        if i in cold_m:
+            m3_strat[i] = m3_gap[i] * 0.7 + main_recent_share[i] * 0.3
         else:
-            m3_strategy[i] = m3_probs[i] * 0.1  # low weight for non-cold
-    m3_strategy = m3_strategy / m3_strategy.sum()
+            m3_strat[i] = m3_gap[i] * 0.15
+    m3_strat = m3_strat / m3_strat.sum()
     
-    s3_strategy = np.zeros(sub_n)
+    s3_strat = np.zeros(sub_n)
     for i in range(sub_n):
-        if i in cold_sub_idxs:
-            s3_strategy[i] = s3_probs[i] * 0.6 + sub_warming[i] * 0.4
+        if i in cold_s:
+            s3_strat[i] = s3_gap[i] * 0.7 + sub_recent_share[i] * 0.3
         else:
-            s3_strategy[i] = s3_probs[i] * 0.1
-    s3_strategy = s3_strategy / s3_strategy.sum()
+            s3_strat[i] = s3_gap[i] * 0.15
+    s3_strat = s3_strat / s3_strat.sum()
     
-    rng3 = random.Random(303)
-    best_main3 = None
-    best_sub3 = None
-    best_score3 = -1
-    for _ in range(500):
-        m_ids = _weighted_sample(m3_strategy, cfg.main_count, rng3)
-        s_ids = _weighted_sample(s3_strategy, cfg.sub_count, rng3)
-        sc = _score_combination(m_ids, s_ids, m3_strategy, s3_strategy,
-                                main_range, sub_range)
-        if sc > best_score3:
-            best_score3 = sc
-            best_main3 = m_ids
-            best_sub3 = s_ids
-    main_3 = sorted([main_range[i] for i in best_main3])
-    sub_3 = sorted([sub_range[i] for i in best_sub3])
-    reason_3 = "追冷: 冷号中有回暖趋势的号码(泊松逾期+近期升温综合评估)"
+    main_3, sub_3 = _run_strategy(m3_strat, s3_strat, 303)
+    reason_3 = "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
     
     # ========================================================================
-    # Strategy 4: 马尔可夫
-    # Reasoning: Given the last draw's numbers, which numbers are most likely
-    # to appear next? Uses the Markov chain transition probabilities.
-    # Also considers: a number that appeared last draw tends to reappear
-    # (streaky behavior), and numbers adjacent to last draw's numbers.
+    # Strategy 4: 🔗马尔可夫
+    #    Markov transition + neighborhood of last draw's numbers.
+    #    Boost numbers in ±2 range of last draw's winners.
     # ========================================================================
-    m4_probs = ensemble._model_main_probs['markov_chain']
-    s4_probs = ensemble._model_sub_probs['markov_chain']
+    m4_raw = ensemble._model_main_probs['markov_chain']
+    s4_raw = ensemble._model_sub_probs['markov_chain']
     
-    # Bonus for numbers that appeared in the LAST draw (streaky behavior)
+    m4_boosted = np.array(m4_raw)
+    s4_boosted = np.array(s4_raw)
+    
     if len(main_nums) > 0:
-        last_main_vals = main_nums[0]  # most recent draw (sorted ascending)
-        # Neighborhood: numbers within ±2 of last draw's numbers
-        last_neighborhood = set()
+        last_main_vals = main_nums[0]
         for n in last_main_vals:
+            idx = n - cfg.main_min
+            m4_boosted[idx] *= 1.2  # repeat boost
             for offset in range(-2, 3):
                 neighbor = n + offset
                 if cfg.main_min <= neighbor <= cfg.main_max:
-                    last_neighborhood.add(neighbor - cfg.main_min)
-        
-        m4_boosted = np.array(m4_probs)
-        for i in last_neighborhood:
-            m4_boosted[i] *= 1.3  # boost neighbors of last draw's numbers
-        # Also boost numbers that were in the last draw
-        for n in last_main_vals:
-            idx = n - cfg.main_min
-            m4_boosted[idx] *= 1.2
+                    m4_boosted[neighbor - cfg.main_min] *= 1.15
         m4_boosted = m4_boosted / m4_boosted.sum()
-    else:
-        m4_boosted = m4_probs
     
     if len(sub_nums) > 0:
-        last_sub_vals = sub_nums[0]
-        s4_boosted = np.array(s4_probs)
-        for n in last_sub_vals:
-            idx = n - cfg.sub_min
-            s4_boosted[idx] *= 1.3
+        for n in sub_nums[0]:
+            s4_boosted[n - cfg.sub_min] *= 1.3
         s4_boosted = s4_boosted / s4_boosted.sum()
-    else:
-        s4_boosted = s4_probs
     
-    rng4 = random.Random(404)
-    best_main4 = None
-    best_sub4 = None
-    best_score4 = -1
-    for _ in range(500):
-        m_ids = _weighted_sample(m4_boosted, cfg.main_count, rng4)
-        s_ids = _weighted_sample(s4_boosted, cfg.sub_count, rng4)
-        sc = _score_combination(m_ids, s_ids, m4_boosted, s4_boosted,
-                                main_range, sub_range)
-        if sc > best_score4:
-            best_score4 = sc
-            best_main4 = m_ids
-            best_sub4 = s_ids
-    main_4 = sorted([main_range[i] for i in best_main4])
-    sub_4 = sorted([sub_range[i] for i in best_sub4])
-    reason_4 = "马尔可夫: 基于上期号码转移概率+邻域分析的预测"
+    # Bayesian fusion with decay frequency for stability
+    m4_fused = _bayesian_fusion(
+        {'markov': m4_boosted, 'decay': ensemble._model_main_probs['decay_frequency']},
+        {'markov': 0.7, 'decay': 0.3}, main_n)
+    s4_fused = _bayesian_fusion(
+        {'markov': s4_boosted, 'decay': ensemble._model_sub_probs['decay_frequency']},
+        {'markov': 0.7, 'decay': 0.3}, sub_n)
+    
+    main_4, sub_4 = _run_strategy(m4_fused, s4_fused, 404)
+    reason_4 = "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
     
     # ========================================================================
-    # Strategy 5: 平衡策略
-    # Reasoning: Exclude extreme hot (top 30%) and extreme cold (bottom 30%).
-    # From the remaining mid-frequency zone, pick combinations that have good
-    # structural balance: sum in reasonable range, odd/even balance, span.
+    # Strategy 5: ⚖️平衡
+    #    Exclude extreme hot (top 30%) and extreme cold (bottom 30%).
+    #    Use CRF scoring heavily weighted toward structural coherence.
+    #    This strategy's primary goal is STRUCTURAL SOUNDNESS, not hot/cold.
     # ========================================================================
-    m5_probs = ensemble._model_main_probs['frequency']
-    s5_probs = ensemble._model_sub_probs['frequency']
-    main_ranked = np.argsort(m5_probs)[::-1]
-    sub_ranked = np.argsort(s5_probs)[::-1]
+    m5_raw = ensemble._model_main_probs['decay_frequency']
+    s5_raw = ensemble._model_sub_probs['decay_frequency']
+    main_ranked = np.argsort(m5_raw)[::-1]
+    sub_ranked = np.argsort(s5_raw)[::-1]
     
     main_mid_start = int(main_n * 0.3)
     main_mid_end = int(main_n * 0.7)
     sub_mid_start = int(sub_n * 0.25)
     sub_mid_end = int(sub_n * 0.75)
     
-    main_mid_pool = list(main_ranked[main_mid_start:main_mid_end])
-    sub_mid_pool = list(sub_ranked[sub_mid_start:sub_mid_end])
-    
-    # Build a balanced scoring: prefer mid-pool, then structural quality
-    m5_scores = np.ones(main_n) * 0.3
-    for i in main_mid_pool:
+    # Build mid-zone preference
+    m5_scores = np.ones(main_n) * 0.2
+    for i in main_ranked[main_mid_start:main_mid_end]:
         m5_scores[i] = 1.0
-    # Also give some weight to numbers just outside the mid zone
-    near_mid = list(main_ranked[int(main_n*0.2):int(main_n*0.3)]) + \
-               list(main_ranked[int(main_n*0.7):int(main_n*0.8)])
-    for i in near_mid:
-        m5_scores[i] = 0.6
+    for i in list(main_ranked[int(main_n*0.2):int(main_n*0.3)]) + list(main_ranked[int(main_n*0.7):int(main_n*0.8)]):
+        m5_scores[i] = 0.5
     m5_scores = m5_scores / m5_scores.sum()
     
-    s5_scores = np.ones(sub_n) * 0.3
-    for i in sub_mid_pool:
+    s5_scores = np.ones(sub_n) * 0.2
+    for i in sub_ranked[sub_mid_start:sub_mid_end]:
         s5_scores[i] = 1.0
     s5_scores = s5_scores / s5_scores.sum()
     
+    # For balanced strategy: run CRF scoring with EXTRA structural weight
     rng5 = random.Random(505)
     best_main5 = None
     best_sub5 = None
-    best_score5 = -1
-    best_struct5 = -1
+    best_score5 = -999
     for _ in range(500):
         m_ids = _weighted_sample(m5_scores, cfg.main_count, rng5)
         s_ids = _weighted_sample(s5_scores, cfg.sub_count, rng5)
-        
-        # Score: probability + structural bonus
-        prob_sc = _score_combination(m_ids, s_ids, m5_scores, s5_scores,
-                                     main_range, sub_range)
-        
-        # Structural bonus: prefer combinations with good balance
         m_vals = [main_range[i] for i in m_ids]
-        odd_count = sum(1 for v in m_vals if v % 2 == 1)
-        combo_sum = sum(m_vals)
-        span = max(m_vals) - min(m_vals)
+        s_vals = [sub_range[i] for i in s_ids]
         
-        # Expected: roughly half odd/half even, sum near mean, span reasonable
-        expected_odd = cfg.main_count / 2
-        odd_penalty = abs(odd_count - expected_odd) * 0.01
-        # For DLT (5 numbers): typical sum ~80-120, for SSQ (6 numbers): ~100-140
-        sum_ok = 1.0
-        span_ok = 1.0
-        # These are rough structural checks, not hard constraints
-        struct_bonus = 1.0 - odd_penalty
-        
-        total_sc = prob_sc * struct_bonus
-        if total_sc > best_score5:
-            best_score5 = total_sc
-            best_main5 = m_ids
-            best_sub5 = s_ids
+        # Use CRF scoring (already includes structural balance)
+        sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
+        if sc > best_score5:
+            best_score5 = sc
+            best_main5 = m_vals
+            best_sub5 = s_vals
     
-    main_5 = sorted([main_range[i] for i in best_main5])
-    sub_5 = sorted([sub_range[i] for i in best_sub5])
-    reason_5 = "平衡策略: 避开极端冷热号，中段频率+结构均衡的号码组合"
+    main_5 = sorted(best_main5)
+    sub_5 = sorted(best_sub5)
+    reason_5 = "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
     
     # ========================================================================
     # Build output
@@ -627,7 +710,6 @@ def generate_recommendations(
     
     groups = []
     for i, (main_cand, sub_cand, reason) in enumerate(strategies[:num_groups]):
-        # Compute a combined ensemble score for display (not used for selection)
         main_s = sum(main_probs[main_range.index(n)] for n in main_cand) * 100
         sub_s = sum(sub_probs[sub_range.index(n)] for n in sub_cand) * 100
         groups.append({
@@ -641,7 +723,7 @@ def generate_recommendations(
     main_ranked = sorted([(n, main_probs[i]) for i, n in enumerate(main_range)], key=lambda x: -x[1])
     sub_ranked = sorted([(n, sub_probs[i]) for i, n in enumerate(sub_range)], key=lambda x: -x[1])
     
-    logger.info("Generated %d recommendation groups for %s via multi-strategy", len(groups), cfg.name)
+    logger.info("CRF-enhanced: %d groups for %s", len(groups), cfg.name)
     return {
         "groups": groups,
         "hot_numbers": [n for n, _ in main_ranked[:5]],
