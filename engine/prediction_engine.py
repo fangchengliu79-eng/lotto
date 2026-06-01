@@ -333,43 +333,39 @@ class AdvancedPredictionEngine:
             # Select diverse groups from GA top candidates
             ga_candidates = ga_result["top_n"]
             
-            # Group by unique combinations
-            seen_combos = set()
+            # Use _select_diverse across GA candidates + weighted sampling for real diversity
+            ga_combo_set = set()
+            all_candidates = []
             for entry in ga_candidates:
                 key = (tuple(entry["main"]), tuple(entry["sub"]))
-                if key not in seen_combos:
-                    seen_combos.add(key)
-                    groups.append({
-                        "index": len(groups) + 1,
-                        "main": entry["main"],
-                        "sub": entry["sub"],
-                        "score": round(self._score_combination(entry["main"], entry["sub"]), 2),
-                        "fitness": entry["fitness"],
-                        "risk_score": round(self._compute_risk_score(entry["main"], entry["sub"]), 2),
-                        "structure_score": round(self._compute_structure_score(entry["main"], entry["sub"]), 2),
-                        "source": "ga",
-                    })
-                if len(groups) >= num_groups:
-                    break
+                if key not in ga_combo_set:
+                    ga_combo_set.add(key)
+                    all_candidates.append({"main": entry["main"], "sub": entry["sub"]})
             
-            # If not enough unique groups from GA, append diverse weighted sampling
-            if len(groups) < num_groups:
-                extra = self._select_diverse(
-                    self._generate_candidates(2000), num_groups - len(groups)
-                )
-                for cand in extra:
-                    groups.append({
-                        "index": len(groups) + 1,
-                        "main": cand["main"],
-                        "sub": cand["sub"],
-                        "score": round(self._score_combination(cand["main"], cand["sub"]), 2),
-                        "fitness": round(self._score_combination(cand["main"], cand["sub"]), 2),
-                        "risk_score": round(self._compute_risk_score(cand["main"], cand["sub"]), 2),
-                        "structure_score": round(self._compute_structure_score(cand["main"], cand["sub"]), 2),
-                        "source": "weighted_sampling",
-                    })
-                    if len(groups) >= num_groups:
-                        break
+            # Supplement with weighted sampling if not enough
+            if len(all_candidates) < num_groups * 3:
+                extra = self._generate_candidates(3000)
+                for c in extra:
+                    key = (tuple(c["main"]), tuple(c["sub"]))
+                    if key not in ga_combo_set:
+                        ga_combo_set.add(key)
+                        all_candidates.append(c)
+            
+            selected = self._select_diverse(all_candidates, num_groups)
+            for i, cand in enumerate(selected):
+                score_val = self._score_combination(cand["main"], cand["sub"])
+                risk_val = self._compute_risk_score(cand["main"], cand["sub"])
+                struct_val = self._compute_structure_score(cand["main"], cand["sub"])
+                groups.append({
+                    "index": i + 1,
+                    "main": cand["main"],
+                    "sub": cand["sub"],
+                    "score": round(score_val, 2),
+                    "fitness": round(sum(self._ensemble_probs[0][n - self.cfg.main_min] for n in cand["main"]) + sum(self._ensemble_probs[1][n - self.cfg.sub_min] for n in cand["sub"]), 2),
+                    "risk_score": round(risk_val, 2),
+                    "structure_score": round(struct_val, 2),
+                    "source": "ga_diverse",
+                })
 
             ga_stats = {
                 "generations_run": ga_result["generations_run"],
@@ -470,32 +466,57 @@ class AdvancedPredictionEngine:
         return candidates
 
     def _select_diverse(self, candidates: List[Dict], num_groups: int) -> List[Dict]:
-        """Select diverse top candidates."""
+        """Select diverse top candidates with per-number diversity."""
+        if not candidates:
+            return []
+            
+        # 先按概率评分排序
         scored = []
-        used_main = set()
-
         for c in candidates:
             main_p = sum(self._ensemble_probs[0][n - self.cfg.main_min] for n in c["main"])
             sub_p = sum(self._ensemble_probs[1][n - self.cfg.sub_min] for n in c["sub"])
-            overlap = len(set(c["main"]) & used_main) * 0.05
-            score = main_p + sub_p - overlap
+            score = main_p + sub_p
             scored.append((score, c))
-
         scored.sort(key=lambda x: -x[0])
-        selected = []
-        used_subs = set()
-
+        
+        # 按sub号码分组：每个不同的sub组合只保留得分最高的一组
+        best_by_sub = {}
         for score, c in scored:
-            sub_key = tuple(c["sub"])
-            if len(used_subs) >= 3 and sub_key in used_subs:
-                continue
-            used_main.update(c["main"])
-            used_subs.add(sub_key)
-            c["score"] = score
-            selected.append(c)
-            if len(selected) >= num_groups:
-                break
-
+            sub_key = tuple(sorted(c["sub"]))
+            if sub_key not in best_by_sub:
+                best_by_sub[sub_key] = (score, c)
+        
+        # 优先选sub号码不同的组合
+        selected = []
+        used_sub_nums = set()
+        fallback_pool = []
+        
+        # 第一轮：选sub号码完全不重复的
+        for sub_key, (score, c) in sorted(best_by_sub.items(), key=lambda x: -x[1][0]):
+            if not used_sub_nums or not (set(c["sub"]) & used_sub_nums):
+                selected.append(c)
+                used_sub_nums.update(c["sub"])
+                if len(selected) >= num_groups:
+                    break
+            else:
+                fallback_pool.append((score, c))
+        
+        # 第二轮：如果不够，从剩余的里面选，允许少量重复
+        if len(selected) < num_groups:
+            for score, c in fallback_pool:
+                if c not in selected:
+                    selected.append(c)
+                    if len(selected) >= num_groups:
+                        break
+        
+        # 第三轮：如果还不到5组，从原始候选池补充
+        if len(selected) < num_groups:
+            for score, c in scored:
+                if c not in selected:
+                    selected.append(c)
+                    if len(selected) >= num_groups:
+                        break
+        
         return selected
 
     def _score_combination(self, main: List[int], sub: List[int]) -> float:
