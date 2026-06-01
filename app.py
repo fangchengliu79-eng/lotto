@@ -16,11 +16,9 @@ matplotlib.use('Agg')
 from config_dlt import DLT
 from config_ssq import SSQ
 from data_fetcher import update_data
-from analysis.statistics import comprehensive_analysis
 from models.statistical import FrequencyModel, PoissonModel, MonteCarloModel
 from models.timeseries import ExponentialSmoothingModel
 from models.ensemble import EnsembleModel, generate_recommendations
-from backtest.backtester import Backtester
 from utils.predictions import (
     get_all_predictions, get_latest_prediction, save_prediction, auto_compare_latest
 )
@@ -157,7 +155,7 @@ def render_lottery(cfg):
             st.rerun()
 
     # 子页面导航
-    page = st.radio("", ["🎯 预测结果", "📊 数据分析", "📜 预测历史", "📈 回测"], 
+    page = st.radio("", ["🎯 预测结果", "📜 预测历史"], 
                     horizontal=True, label_visibility="collapsed", key=f"nav_{cfg.short}")
     num_groups = 5
 
@@ -299,33 +297,7 @@ def render_lottery(cfg):
                         st.success("✅ 预测已生成")
                     st.rerun()
 
-    # ──── 数据分析 ────
-    elif page == "📊 数据分析":
-        st.markdown(f"<h1>📊 {cfg.name}数据分析</h1>", unsafe_allow_html=True)
-        a = comprehensive_analysis(df, cfg)
-        c1,c2,c3,c4 = st.columns(4)
-        with c1: st.markdown(metric_card(f"{len(df):,}", "历史期数"), unsafe_allow_html=True)
-        with c2: st.markdown(metric_card(" ".join(f"{n:02d}" for n in a["hot_cold"]["main_hot"][:5]), f"{cfg.main_label}热号 Top5"), unsafe_allow_html=True)
-        with c3: st.markdown(metric_card(" ".join(f"{n:02d}" for n in a["hot_cold"]["main_cold"][:3]), f"{cfg.main_label}冷号 Top3"), unsafe_allow_html=True)
-        with c4: st.markdown(metric_card(f"{len(a['hot_cold']['main_hot'])}", "热号总数"), unsafe_allow_html=True)
-        st.markdown("<hr>", unsafe_allow_html=True)
 
-        fq = a["frequency"]
-        ca, cb = st.columns(2)
-        with ca:
-            mf = pd.DataFrame([(n, fq["main_frequencies"][n], fq["main_frequency_pct"][n]) for n in range(cfg.main_min, cfg.main_max+1)], columns=["号码","出现次数","频率(%)"]).sort_values("出现次数", ascending=False).reset_index(drop=True)
-            mf.index += 1; st.dataframe(mf, width='stretch', height=360)
-        with cb:
-            sf = pd.DataFrame([(n, fq["sub_frequencies"][n], fq["sub_frequency_pct"][n]) for n in range(cfg.sub_min, cfg.sub_max+1)], columns=["号码","出现次数","频率(%)"]).sort_values("出现次数", ascending=False).reset_index(drop=True)
-            sf.index += 1; st.dataframe(sf, width='stretch', height=360)
-        st.markdown("<hr>", unsafe_allow_html=True)
-
-        ss = a["sum"]["main_sum_stats"]; sp = a["span"]["main_span_stats"]; ac = a["ac_value"]["main_ac_stats"]
-        conc = a["consecutive"]; oe = a["odd_even"]
-        cs1,cs2,cs3 = st.columns(3)
-        with cs1: st.markdown(metric_card(f"{ss['mean']:.1f}", f"{cfg.main_label}和值均值"), unsafe_allow_html=True); st.markdown(metric_card(f"{ss['min']} ~ {ss['max']}", "和值范围"), unsafe_allow_html=True)
-        with cs2: st.markdown(metric_card(f"{sp['mean']:.1f}", f"{cfg.main_label}跨度均值"), unsafe_allow_html=True); st.markdown(metric_card(f"{ac['mean']:.1f}", "AC 值均值"), unsafe_allow_html=True)
-        with cs3: st.markdown(metric_card(f"{conc['main_consec_pct']:.1f}%", "连号出现率"), unsafe_allow_html=True); st.markdown(metric_card(str(oe["main_most_common"]), "常见奇偶比"), unsafe_allow_html=True)
 
     # ──── 预测历史 ────
     elif page == "📜 预测历史":
@@ -356,22 +328,7 @@ def render_lottery(cfg):
                         if pred.get("recommendations"):
                             for r in pred["recommendations"]: st.markdown(hist_row(r, None, cfg), unsafe_allow_html=True)
 
-    # ──── 回测 ────
-    elif page == "📈 回测":
-        st.markdown("<h1>📈 历史回测</h1>", unsafe_allow_html=True)
-        if st.button("▶️ 开始回测", type="primary", key=f"backtest_{cfg.short}"):
-            with st.spinner("正在运行回测..."):
-                o = sys.stdout; sys.stdout = captured = StringIO()
-                bt = Backtester(df, cfg, test_window=30)
-                stats = bt.run(verbose=False); sys.stdout = o
-            if "error" in stats: st.error(f"回测失败: {stats['error']}")
-            else:
-                st.success("✅ 回测完成")
-                c1,c2,c3,c4 = st.columns(4)
-                with c1: st.markdown(metric_card(f"{stats['total_tests']}", "测试期数"), unsafe_allow_html=True)
-                with c2: st.markdown(metric_card(f"{stats['total_hits']['mean']:.2f}", "综合平均命中"), unsafe_allow_html=True)
-                with c3: st.markdown(metric_card(f"{stats['best_hits_count']}", "最优次数"), unsafe_allow_html=True)
-                with c4: st.markdown(metric_card(f"{stats['best_hits_rate']:.1f}%", "最优命中率"), unsafe_allow_html=True)
+
 
     st.markdown("<hr>", unsafe_allow_html=True)
     print_disclaimer(cfg)
