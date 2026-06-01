@@ -1,17 +1,97 @@
 [
   {
-    "id": "pred_26060_20260601_101126",
+    "id": "pred_26060_20260601_155102",
     "period": "26060",
     "draw_date": "待定",
-    "created_at": "2026-06-01 10:11:26",
+    "created_at": "2026-06-01 15:51:02",
     "status": "active",
-    "models_used": ["frequency", "poisson", "exponential_smoothing", "monte_carlo"],
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
     "recommendations": [
-      {"group": 1, "main": [7, 14, 16, 22, 31], "sub": [5, 8], "score": 51.18, "reason": "综合评分 51.2"},
-      {"group": 2, "main": [7, 11, 18, 24, 31], "sub": [5, 8], "score": 51.26, "reason": "综合评分 51.3"},
-      {"group": 3, "main": [9, 12, 13, 18, 22], "sub": [1, 8], "score": 61.84, "reason": "综合评分 61.8"},
-      {"group": 4, "main": [9, 10, 13, 19, 26], "sub": [5, 8], "score": 61.69, "reason": "综合评分 61.7"},
-      {"group": 5, "main": [9, 12, 13, 18, 28], "sub": [5, 8], "score": 61.03, "reason": "综合评分 61.0"}
+      {
+        "group": 1,
+        "main": [
+          2,
+          9,
+          10,
+          18,
+          29
+        ],
+        "sub": [
+          5,
+          8
+        ],
+        "score": 34.4,
+        "reason": "高频热号: 200期全频历史出现频率最高的号码"
+      },
+      {
+        "group": 2,
+        "main": [
+          2,
+          12,
+          13,
+          23,
+          26
+        ],
+        "sub": [
+          1,
+          8
+        ],
+        "score": 32.8,
+        "reason": "近期趋势: 最近50期走高趋势最明显的号码"
+      },
+      {
+        "group": 3,
+        "main": [
+          17,
+          19,
+          33,
+          34,
+          35
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 28.7,
+        "reason": "追冷: 冷号中有回暖趋势的号码(泊松逾期+近期升温综合评估)"
+      },
+      {
+        "group": 4,
+        "main": [
+          12,
+          14,
+          15,
+          20,
+          28
+        ],
+        "sub": [
+          8,
+          10
+        ],
+        "score": 31.5,
+        "reason": "马尔可夫: 基于上期号码转移概率+邻域分析的预测"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          21,
+          23,
+          26,
+          28
+        ],
+        "sub": [
+          7,
+          12
+        ],
+        "score": 31.5,
+        "reason": "平衡策略: 避开极端冷热号，中段频率+结构均衡的号码组合"
+      }
     ],
     "actual_draw": null,
     "matches": null,
