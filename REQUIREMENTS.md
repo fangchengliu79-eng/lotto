@@ -1,9 +1,9 @@
 # 🎯 彩票预测系统 · 完整需求文档
 
-> 版本: v2.0 (secondstage)
+> 版本: v4.0 (fourstage)
 > 保存路径: /root/lotto/
-> Git tag: secondstage
-> 最后更新: 2026-05-29
+> Git tag: fourstage
+> 最后更新: 2026-06-04
 
 ---
 
