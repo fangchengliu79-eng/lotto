@@ -19,4 +19,6 @@ DLT = LotteryConfig(
     },
     streamlit_title="🎯 大乐透数据分析与预测系统",
     streamlit_icon="🎯",
+    draw_days=[0, 2, 5],        # 周一、周三、周六
+    draw_time="21:25",
 )

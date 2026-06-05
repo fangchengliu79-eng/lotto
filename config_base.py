@@ -46,6 +46,10 @@ class LotteryConfig:
     default_source: str = "500com"
     zhcw_path: str = ""
 
+    # 开奖时间配置（用于逾期自动检查）
+    draw_days: List[int] = None      # 开奖日: 0=Mon..6=Sun (e.g. Mon/Wed/Sat = [0,2,5])
+    draw_time: str = "21:30"         # 开奖时间 HH:MM (北京时间)
+
     # 默认参数
     min_history_draws: int = 100
     recommend_groups: int = 5

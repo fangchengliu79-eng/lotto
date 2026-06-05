@@ -2,6 +2,7 @@
 预测封存与比对模块 - 完全参数化
 """
 import json
+from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -10,8 +11,41 @@ import pandas as pd
 from .helpers import get_logger
 
 
+def _pred_dir(cfg) -> Path:
+    """每期独立预测文件目录（数据级的容灾备份）"""
+    d = cfg.data_dir / "predictions"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def _load_all(cfg) -> List[Dict]:
-    """加载所有预测"""
+    """加载所有预测 — 优先从独立文件恢复，单文件损坏不影响其他期"""
+    pred_dir = _pred_dir(cfg)
+    files = sorted(pred_dir.glob("*.json"))
+    if files:
+        predictions = []
+        for f in files:
+            try:
+                with open(f, "r", encoding="utf-8") as fh:
+                    predictions.append(json.load(fh))
+            except Exception:
+                get_logger(cfg).warning(f"读取预测文件失败: {f.name}")
+        # 也尝试从旧式单文件加载并合并（迁移兼容）
+        path = cfg.predictions_file
+        if path.exists():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    legacy = json.load(f)
+                if isinstance(legacy, list):
+                    legacy_periods = {p["period"] for p in predictions}
+                    for p in legacy:
+                        if p["period"] not in legacy_periods:
+                            predictions.append(p)
+            except Exception:
+                pass
+        return predictions
+
+    # 纯旧式单文件回退
     path = cfg.predictions_file
     if not path.exists():
         return []
@@ -25,18 +59,36 @@ def _load_all(cfg) -> List[Dict]:
 
 
 def _save_all(predictions: List[Dict], cfg):
-    """保存所有预测, 最多保留10条(active + completed)"""
-    MAX_HISTORY = 10
-    # 排序: active排前面, completed按创建时间倒序
+    """保存所有预测 — 同时写联合文件 + 每期独立文件，最大保留20条"""
+    MAX_HISTORY = 20
     active = [p for p in predictions if p.get("status") == "active"]
     completed = [p for p in predictions if p.get("status") == "completed"]
     completed.sort(key=lambda p: p.get("created_at", ""), reverse=True)
-    # 只保留最新的 MAX_HISTORY 条
     kept = active + completed[:max(0, MAX_HISTORY - len(active))]
+
+    # 写联合文件（兼容旧版读取）
     path = cfg.predictions_file
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(kept, f, ensure_ascii=False, indent=2)
+
+    # 写每期独立文件（容灾备份）
+    pred_dir = _pred_dir(cfg)
+    kept_periods = set()
+    for p in kept:
+        period = str(p["period"])
+        kept_periods.add(period)
+        pfile = pred_dir / f"{period}.json"
+        with open(pfile, "w", encoding="utf-8") as f:
+            json.dump(p, f, ensure_ascii=False, indent=2)
+
+    # 清理超出的独立文件
+    for f in pred_dir.glob("*.json"):
+        if f.stem not in kept_periods:
+            try:
+                f.unlink()
+            except Exception:
+                pass
 
 
 def _convert(obj):
@@ -55,6 +107,24 @@ def _convert(obj):
     return obj
 
 
+def get_next_draw_date(cfg) -> str:
+    """根据开奖排期计算下一期预计开奖日期"""
+    from datetime import datetime, timedelta
+    now = datetime.now()
+    wd = now.weekday()
+    dh, dm = map(int, cfg.draw_time.split(':'))
+    draw_passed = (now.hour > dh or (now.hour == dh and now.minute >= dm))
+
+    for days_ahead in range(7):
+        check = (wd + days_ahead) % 7
+        if check in cfg.draw_days:
+            if days_ahead == 0 and draw_passed:
+                continue  # 今日已开奖，找下一期
+            next_date = now + timedelta(days=days_ahead)
+            return next_date.strftime("%Y-%m-%d")
+    return "待定"
+
+
 def save_prediction(period: str, recommendations: list, cfg, models_used: list = None):
     """封存一组预测"""
     predictions = _load_all(cfg)
@@ -63,7 +133,7 @@ def save_prediction(period: str, recommendations: list, cfg, models_used: list =
     entry = {
         "id": pred_id,
         "period": str(period),
-        "draw_date": "待定",
+        "draw_date": get_next_draw_date(cfg),
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "status": "active",
         "models_used": models_used or ["frequency", "poisson", "exponential_smoothing", "monte_carlo"],
@@ -206,3 +276,80 @@ def auto_compare_latest(df: pd.DataFrame, cfg) -> Optional[Dict]:
                     _save_all(all_p, cfg)
                 return updated
     return None
+
+
+def get_recent_draws_html(df: pd.DataFrame, cfg, n: int = 10) -> str:
+    """生成最近 n 期实际开奖号码的 HTML"""
+    recent = df.head(n).copy()
+    if recent.empty:
+        return "<p style='color:#94a3b8;font-size:0.85rem;'>暂无开奖数据</p>"
+
+    lines = []
+    for _, row in recent.iterrows():
+        period = int(row["period"])
+        main_nums = sorted([int(row[c]) for c in cfg.main_cols])
+        sub_nums = sorted([int(row[c]) for c in cfg.sub_cols])
+        main_balls = "".join(
+            f"<span class='number-ball {cfg.main_label_en}' style='width:34px;height:34px;font-size:0.85rem;'>{n:02d}</span>"
+            for n in main_nums
+        )
+        sub_balls = "".join(
+            f"<span class='number-ball {cfg.sub_label_en}' style='width:34px;height:34px;font-size:0.85rem;'>{n:02d}</span>"
+            for n in sub_nums
+        )
+        lines.append(
+            f"<div style='display:flex;align-items:center;gap:0.6rem;padding:0.35rem 0;border-bottom:1px solid #f1f5f9;'>"
+            f"<span style='font-weight:700;font-size:0.85rem;color:#64748b;min-width:3.5rem;'>#{period}</span>"
+            f"<span>{main_balls}</span>"
+            f"<span style='color:#94a3b8;font-size:0.7rem;'>{cfg.sub_label}</span>"
+            f"<span>{sub_balls}</span>"
+            f"</div>"
+        )
+    return "".join(lines)
+
+
+def force_check_overdue(cfg) -> tuple:
+    """
+    强制从网页拉取最新开奖数据，检查所有 active 预测是否逾期。
+    返回 (fresh_df, changed_count, messages) —— 用于 UI 展示。
+    """
+    from data_fetcher import update_data
+
+    logger = get_logger(cfg)
+    messages = []
+    changed_count = 0
+
+    # 1. 强制从网页刷新数据
+    logger.info(f"{cfg.name}: 强制刷新数据...")
+    fresh_df = update_data(cfg, force_refresh=True)
+    if fresh_df is None or fresh_df.empty:
+        fresh_df = pd.DataFrame()
+        return fresh_df, 0, ["⚠️ 无法从网页获取最新数据"]
+
+    fresh_periods = set(fresh_df["period"].astype(str).values)
+    predictions = _load_all(cfg)
+    updated_any = False
+
+    for pred in predictions:
+        if pred["status"] != "active":
+            continue
+        period = str(pred["period"])
+        if period in fresh_periods:
+            logger.info(f"{cfg.name}: 发现逾期预测 {period}，开始比对...")
+            updated = compare_with_draw(pred, fresh_df, cfg)
+            if updated:
+                all_p = _load_all(cfg)
+                for i, p in enumerate(all_p):
+                    if p.get("id") == updated.get("id"):
+                        all_p[i] = updated
+                        break
+                _save_all(all_p, cfg)
+                updated_any = True
+                changed_count += 1
+                hit = updated.get("summary", {}).get("best_hits", 0)
+                messages.append(f"✅ 期 {period} 比对完成，最佳命中 {hit} 个")
+
+    if not updated_any:
+        messages.append(f"ℹ️ 未发现新的可比对期号")
+
+    return fresh_df, changed_count, messages

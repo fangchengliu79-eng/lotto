@@ -20,4 +20,6 @@ SSQ = LotteryConfig(
     streamlit_title="🔴 双色球数据分析与预测系统",
     streamlit_icon="🔴",
     top_hot_count=18,  # 双色球33个红球，覆盖一半以上
+    draw_days=[1, 3, 6],        # 周二、周四、周日
+    draw_time="21:15",
 )

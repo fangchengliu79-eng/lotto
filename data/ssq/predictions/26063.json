@@ -1,0 +1,183 @@
+{
+  "id": "pred_26063_20260604_102847",
+  "period": "26063",
+  "draw_date": "2026-06-04",
+  "created_at": "2026-06-04 10:28:47",
+  "status": "completed",
+  "models_used": [
+    "frequency",
+    "poisson",
+    "exponential_smoothing",
+    "monte_carlo"
+  ],
+  "recommendations": [
+    {
+      "group": 1,
+      "main": [
+        3,
+        6,
+        18,
+        20,
+        25,
+        29
+      ],
+      "sub": [
+        2
+      ],
+      "score": 28.8,
+      "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
+    },
+    {
+      "group": 2,
+      "main": [
+        2,
+        15,
+        22,
+        24,
+        25,
+        29
+      ],
+      "sub": [
+        2
+      ],
+      "score": 27.0,
+      "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
+    },
+    {
+      "group": 3,
+      "main": [
+        7,
+        12,
+        19,
+        20,
+        31,
+        32
+      ],
+      "sub": [
+        4
+      ],
+      "score": 23.8,
+      "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
+    },
+    {
+      "group": 4,
+      "main": [
+        2,
+        9,
+        10,
+        13,
+        25,
+        30
+      ],
+      "sub": [
+        15
+      ],
+      "score": 27.5,
+      "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
+    },
+    {
+      "group": 5,
+      "main": [
+        6,
+        10,
+        15,
+        16,
+        23,
+        29
+      ],
+      "sub": [
+        3
+      ],
+      "score": 23.2,
+      "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
+    }
+  ],
+  "actual_draw": {
+    "main": [
+      2,
+      8,
+      25,
+      28,
+      30,
+      31
+    ],
+    "sub": [
+      2
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [
+        25
+      ],
+      "sub_matches": [
+        2
+      ],
+      "main_hits": 1,
+      "sub_hits": 1,
+      "total_hits": 2
+    },
+    {
+      "group": 2,
+      "main_matches": [
+        2,
+        25
+      ],
+      "sub_matches": [
+        2
+      ],
+      "main_hits": 2,
+      "sub_hits": 1,
+      "total_hits": 3
+    },
+    {
+      "group": 3,
+      "main_matches": [
+        31
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        2,
+        25,
+        30
+      ],
+      "sub_matches": [],
+      "main_hits": 3,
+      "sub_hits": 0,
+      "total_hits": 3
+    },
+    {
+      "group": 5,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      2,
+      8,
+      25,
+      28,
+      30,
+      31
+    ],
+    "actual_sub": [
+      2
+    ],
+    "best_group": 2,
+    "best_hits": 3,
+    "avg_main_hits": 1.4,
+    "avg_sub_hits": 0.4,
+    "avg_total_hits": 1.8
+  }
+}

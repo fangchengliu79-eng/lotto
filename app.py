@@ -20,7 +20,8 @@ from models.statistical import FrequencyModel, PoissonModel, MonteCarloModel
 from models.timeseries import ExponentialSmoothingModel
 from models.ensemble import EnsembleModel, generate_recommendations
 from utils.predictions import (
-    get_all_predictions, get_latest_prediction, save_prediction, auto_compare_latest
+    get_all_predictions, get_latest_prediction, save_prediction,
+    auto_compare_latest, force_check_overdue, get_recent_draws_html
 )
 from utils.helpers import print_disclaimer
 
@@ -159,26 +160,96 @@ def render_lottery(cfg):
 
     auto_compare_latest(df, cfg)
 
-    # 检测是否有新数据加入：如果最新数据的期号 > 最新预测的期号，自动生成新预测
-    latest_data_period = str(df.iloc[0]["period"])
-    lp_check = get_latest_prediction(cfg)
-    needs_new_prediction = False
-    if lp_check is None:
-        needs_new_prediction = True
-    else:
-        try:
-            if int(latest_data_period) > int(lp_check["period"]):
-                needs_new_prediction = True
-        except (ValueError, KeyError):
-            pass
+    # ── 逾期自动检查与手动强制比对 ──
+    from datetime import datetime as _dt
+    _now = _dt.now()
+    _init_key = f"_overdue_inited_{cfg.short}"
+    if _init_key not in st.session_state:
+        st.session_state[_init_key] = False
+
+    # 手动强制检查按钮（放在顶部，明显可见）
+    col_a, col_b = st.columns([3, 1])
+    with col_b:
+        force_btn = st.button("🔍 强制检查逾期比对", key=f"force_{cfg.short}",
+                              help=f"强制从网页拉取最新{cfg.name}开奖数据并自动比对",
+                              use_container_width=True)
+
+    # 收集当前 active 预测中不在数据里的期号
+    active_missing = []
+    for p in get_all_predictions(cfg):
+        if p["status"] == "active":
+            pp = str(p["period"])
+            if pp not in set(df["period"].astype(str).values):
+                active_missing.append(pp)
+
+    should_check = force_btn  # 手动按钮总是触发
+    if not should_check and not st.session_state[_init_key] and active_missing:
+        # 自动检查：判断当前时间是否已过开奖时间
+        _wd = _now.weekday()
+        _h, _m = _now.hour, _now.minute
+        _dh, _dm = map(int, cfg.draw_time.split(':'))
+        _draw_passed = (_h > _dh or (_h == _dh and _m >= _dm))
+
+        if _wd in cfg.draw_days and _draw_passed:
+            should_check = True  # 今天是开奖日，已过开奖时间
+        _yesterday = (_wd - 1) % 7
+        if _yesterday in cfg.draw_days and not _draw_passed:
+            should_check = True  # 昨天开奖了，今天还没到下次开奖时间
+
+    st.session_state[_init_key] = True
+
+    if should_check:
+        if active_missing:
+            with st.spinner(f"🔍 正在联网获取最新{cfg.name}开奖数据并自动比对..."):
+                fresh_df, count, msgs = force_check_overdue(cfg)
+                if fresh_df is not None and not fresh_df.empty:
+                    df = fresh_df  # 即使 count=0 也要更新最新数据
+                if count > 0:
+                    for msg in msgs:
+                        st.success(msg)
+                    st.rerun()
+                else:
+                    for msg in msgs:
+                        st.info(msg)
+        elif force_btn:
+            with st.spinner(f"🔍 正在强制检查..."):
+                fresh_df, count, msgs = force_check_overdue(cfg)
+                if fresh_df is not None and not fresh_df.empty:
+                    df = fresh_df  # 即使 count=0 也要更新最新数据
+                if count > 0:
+                    for msg in msgs:
+                        st.success(msg)
+                    st.rerun()
+                else:
+                    for msg in msgs:
+                        st.info(msg)
+
+    # ── 确保当前始终有未开奖的活跃预测 ──
+    # 比对完毕后（预测变为completed），自动生成下一期
+    all_preds_now = get_all_predictions(cfg)
+    active_now = [p for p in all_preds_now if p["status"] == "active"]
     
-    if needs_new_prediction:
-        with st.spinner(f"检测到新数据，正在生成{cfg.name}预测..."):
-            ensemble = EnsembleModel({}, cfg)
-            r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
-            next_period = str(int(latest_data_period) + 1)
-            save_prediction(period=next_period, recommendations=r2.get("groups",[]), cfg=cfg)
-            st.rerun()
+    if not active_now:
+        # 确定下一期期号
+        completed_periods = [int(p["period"]) for p in all_preds_now if p["status"] == "completed"]
+        latest_data_period_int = int(df.iloc[0]["period"])
+        if completed_periods:
+            next_period = max(completed_periods) + 1
+            # 如果最新数据期号已经超过了最新已完成预测的下一期
+            if latest_data_period_int >= next_period:
+                next_period = latest_data_period_int + 1
+        else:
+            # 完全没有历史预测，以最新数据期号为基准
+            next_period = latest_data_period_int + 1
+        
+        # 检查是否已存在该期号的预测（避免重复生成）
+        all_periods = set(p["period"] for p in all_preds_now)
+        if str(next_period) not in all_periods:
+            with st.spinner(f"检测到第{next_period}期待预测，正在生成{cfg.name}预测..."):
+                ensemble = EnsembleModel({}, cfg)
+                r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
+                save_prediction(period=str(next_period), recommendations=r2.get("groups",[]), cfg=cfg)
+                st.rerun()
 
     # 子页面导航
     page = st.radio("", ["🎯 预测结果", "📜 预测历史"], 
@@ -188,7 +259,11 @@ def render_lottery(cfg):
     # ──── 预测结果 ────
     if page == "🎯 预测结果":
         st.markdown(f"<h1>{cfg.icon} 当前预测结果</h1>", unsafe_allow_html=True)
-        lp = get_latest_prediction(cfg)
+        # 始终显示活跃的（未开奖）预测
+        all_p = get_all_predictions(cfg)
+        active_p = [p for p in all_p if p["status"] == "active"]
+        lp = active_p[0] if active_p else None
+        
         if lp is None:
             with st.spinner(f"正在首次生成{cfg.name}预测..."):
                 md = {"f": FrequencyModel(cfg), "p": PoissonModel(cfg),
@@ -203,59 +278,21 @@ def render_lottery(cfg):
                 st.rerun()
         else:
             p, s, nr, cr = lp["period"], lp["status"], len(lp["recommendations"]), lp.get("created_at","")
-            if s == "completed": st.success(f"✅ **期{p}** 已开奖 · 最佳命中 **{lp['summary']['best_hits']}** 个")
-            else: st.info(f"⏳ **期{p}** 预测已封存 · 开奖后自动比对")
+            st.info(f"⏳ **期{p}** 未开奖 · 开奖后自动比对并生成下一期")
             c1,c2,c3,c4 = st.columns(4)
             with c1: st.markdown(metric_card(f"#{p}", "期号"), unsafe_allow_html=True)
             with c2: st.markdown(metric_card(f"{nr}", "推荐组数"), unsafe_allow_html=True)
-            stat_color = "#059669" if s == "completed" else "#d97706"
-            stat_label = "✅ 已比对" if s == "completed" else "⏳ 待开奖"
-            with c3: st.markdown(f"<div class='metric-card'><div class='value' style='font-size:1.2rem;color:{stat_color}'>{stat_label}</div><div class='label'>状态</div></div>", unsafe_allow_html=True)
+            with c3: st.markdown(f"<div class='metric-card'><div class='value' style='font-size:1.2rem;color:#d97706'>⏳ 待开奖</div><div class='label'>状态</div></div>", unsafe_allow_html=True)
             with c4: st.markdown(metric_card(cr[:10] if cr else "-", "日期"), unsafe_allow_html=True)
             st.markdown("<hr>", unsafe_allow_html=True)
 
-            if s == "completed" and lp.get("actual_draw"):
-                a = lp["actual_draw"]
-                am = "".join(ball(n,"main") for n in a["main"])
-                as_ = "".join(ball(n,"sub") for n in a["sub"])
-                st.markdown(f"<h3>实际开奖号码</h3><div><span style='font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.5rem;'>{cfg.main_label}</span>{am}</div><div><span style='font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-right:0.5rem;'>{cfg.sub_label}</span>{as_}</div>", unsafe_allow_html=True)
-                st.markdown("<hr>", unsafe_allow_html=True)
-
             st.markdown(f"<h3>推荐号码 <span style='color:#64748b;font-weight:400;font-size:0.85rem;'>({nr} 组)</span></h3>", unsafe_allow_html=True)
-            mt = {m["group"]: m for m in (lp.get("matches") or [])}
             cols = st.columns(min(5, len(lp["recommendations"])))
             for i, r in enumerate(lp["recommendations"]):
-                with cols[i]: st.markdown(pred_card(r, mt, s != "completed", cfg), unsafe_allow_html=True)
-
-            if s == "completed" and lp.get("summary"):
-                sm = lp["summary"]
-                st.markdown("<hr>", unsafe_allow_html=True)
-                ca,cb,cc,cd = st.columns(4)
-                with ca: st.markdown(metric_card(f"{sm['best_hits']} 个", "最佳命中", f"第{sm['best_group']}组"), unsafe_allow_html=True)
-                with cb: st.markdown(metric_card(f"{sm['avg_main_hits']:.1f}", f"{cfg.main_label}平均"), unsafe_allow_html=True)
-                with cc: st.markdown(metric_card(f"{sm['avg_sub_hits']:.1f}", f"{cfg.sub_label}平均"), unsafe_allow_html=True)
-                with cd: st.markdown(metric_card(f"{sm['avg_total_hits']:.1f}", "综合平均"), unsafe_allow_html=True)
+                with cols[i]: st.markdown(pred_card(r, None, True, cfg), unsafe_allow_html=True)
 
             st.markdown("<hr>", unsafe_allow_html=True)
-            lp2 = str(df.iloc[0]["period"])
-            if any(p["period"]==lp2 and p["status"] in ("active","completed") for p in get_all_predictions(cfg)):
-                st.info(f"✅ 期 {lp2} 已有预测记录")
-            if st.button("📅 生成下一期预测", type="primary", key=f"gen_next_{cfg.short}"):
-                np_ = str(int(df.iloc[0]["period"])+1)
-                if any(p["period"]==np_ for p in get_all_predictions(cfg)):
-                    st.warning(f"期 {np_} 已有预测")
-                else:
-                    with st.spinner("正在生成新预测..."):
-                        md = {"f": FrequencyModel(cfg), "p": PoissonModel(cfg),
-                              "e": ExponentialSmoothingModel(cfg, alpha=0.3), "m": MonteCarloModel(cfg)}
-                        md["m"].n_simulations = 20000
-                        mn = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in df.iterrows()])
-                        sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
-                        for m in md.values(): m.fit(mn, sn)
-                        ensemble = EnsembleModel(md, cfg)
-                        r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
-                        save_prediction(period=np_, recommendations=r2.get("groups",[]), cfg=cfg)
-                        st.rerun()
+
             if st.button("🔄 重新计算", key=f"recalc_{cfg.short}", help="用最新算法重新评估，排名有变化才更新"):
                 with st.spinner("正在重新计算..."):
                     # 用最新算法重新生成
@@ -328,10 +365,17 @@ def render_lottery(cfg):
     # ──── 预测历史 ────
     elif page == "📜 预测历史":
         st.markdown("<h1>📜 预测历史记录</h1>", unsafe_allow_html=True)
+
+        # ── 最近10期实际开奖号码 ──
+        st.markdown("<h3 style='font-size:1.1rem;color:#1e293b;margin-top:0.5rem;'>📋 最近10期开奖号码</h3>", unsafe_allow_html=True)
+        recent_html = get_recent_draws_html(df, cfg, n=10)
+        st.markdown(f"<div class='glass-card' style='padding:0.8rem 1rem;'>{recent_html}</div>", unsafe_allow_html=True)
+        st.markdown("<hr>", unsafe_allow_html=True)
+
         all_p = get_all_predictions(cfg)
         if not all_p: st.markdown("<div class='glass-card' style='text-align:center;padding:3rem;'><p style='color:#64748b;'>暂无预测历史记录</p></div>", unsafe_allow_html=True)
         else:
-            st.markdown(f"<p style='color:#475569;'>{len(all_p)} 条记录</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:#475569;'>{len(all_p)} 条预测记录</p>", unsafe_allow_html=True)
             for pred in all_p:
                 ps, pp, pc, pr_ = pred["status"], pred["period"], pred.get("created_at",""), len(pred.get("recommendations",[]))
                 if ps == "completed" and pred.get("summary"):
