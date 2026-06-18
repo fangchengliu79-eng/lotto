@@ -3,7 +3,7 @@
   "period": "26062",
   "draw_date": "2026-06-06",
   "created_at": "2026-06-04 10:28:47",
-  "status": "active",
+  "status": "completed",
   "models_used": [
     "frequency",
     "poisson",
@@ -92,7 +92,82 @@
       "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
     }
   ],
-  "actual_draw": null,
-  "matches": null,
-  "summary": null
+  "actual_draw": {
+    "main": [
+      7,
+      15,
+      20,
+      24,
+      29
+    ],
+    "sub": [
+      4,
+      10
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 2,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 3,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        29
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        20,
+        29
+      ],
+      "sub_matches": [],
+      "main_hits": 2,
+      "sub_hits": 0,
+      "total_hits": 2
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      7,
+      15,
+      20,
+      24,
+      29
+    ],
+    "actual_sub": [
+      4,
+      10
+    ],
+    "best_group": 5,
+    "best_hits": 2,
+    "avg_main_hits": 0.6,
+    "avg_sub_hits": 0.0,
+    "avg_total_hits": 0.6
+  }
 }

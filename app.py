@@ -278,13 +278,23 @@ def render_lottery(cfg):
                 st.rerun()
         else:
             p, s, nr, cr = lp["period"], lp["status"], len(lp["recommendations"]), lp.get("created_at","")
+            dd = lp.get("draw_date", cr[:10] if cr else "-")
             st.info(f"⏳ **期{p}** 未开奖 · 开奖后自动比对并生成下一期")
             c1,c2,c3,c4 = st.columns(4)
             with c1: st.markdown(metric_card(f"#{p}", "期号"), unsafe_allow_html=True)
             with c2: st.markdown(metric_card(f"{nr}", "推荐组数"), unsafe_allow_html=True)
             with c3: st.markdown(f"<div class='metric-card'><div class='value' style='font-size:1.2rem;color:#d97706'>⏳ 待开奖</div><div class='label'>状态</div></div>", unsafe_allow_html=True)
-            with c4: st.markdown(metric_card(cr[:10] if cr else "-", "日期"), unsafe_allow_html=True)
+            with c4: st.markdown(metric_card(dd, "开奖日期"), unsafe_allow_html=True)
             st.markdown("<hr>", unsafe_allow_html=True)
+            # 兑奖截止日期（60天）
+            if dd and dd != "待定" and len(dd) == 10:
+                try:
+                    from datetime import datetime, timedelta
+                    draw_dt = datetime.strptime(dd, "%Y-%m-%d")
+                    deadline = draw_dt + timedelta(days=60)
+                    st.info(f"📅 **兑奖截止:** {deadline.strftime('%Y-%m-%d')}（自开奖日起 **60天**）")
+                except Exception:
+                    pass
 
             st.markdown(f"<h3>推荐号码 <span style='color:#64748b;font-weight:400;font-size:0.85rem;'>({nr} 组)</span></h3>", unsafe_allow_html=True)
             cols = st.columns(min(5, len(lp["recommendations"])))
@@ -377,7 +387,7 @@ def render_lottery(cfg):
         else:
             st.markdown(f"<p style='color:#475569;'>{len(all_p)} 条预测记录</p>", unsafe_allow_html=True)
             for pred in all_p:
-                ps, pp, pc, pr_ = pred["status"], pred["period"], pred.get("created_at",""), len(pred.get("recommendations",[]))
+                ps, pp, pc, pr_ = pred["status"], pred["period"], pred.get("draw_date", pred.get("created_at","")[:10] or ""), len(pred.get("recommendations",[]))
                 if ps == "completed" and pred.get("summary"):
                     s = pred["summary"]
                     with st.expander(f"**期 {pp}** ✅ 已比对 · 最佳 {s['best_hits']} 个 · {pc}", expanded=False):

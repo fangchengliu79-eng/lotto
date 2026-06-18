@@ -361,6 +361,75 @@ def _bayesian_fusion(model_probs_dict, weights_dict, n, eps=1e-10):
     return result / result.sum()
 
 
+def _check_dlt_zone(main_vals, cold_mode=False):
+    """大乐透前区区间分布过滤：返回区间分布模式的优先级分值。
+    
+    通用模式（cold_mode=False, 策略1/2/4/5）：
+      Priority 2 (☆最优): ABBBC(A=1,B=3,C=1,D=0) 或 ABBBD(A=1,B=3,C=0,D=1)
+                          → B区3个相近（差值≤5）
+      Priority 1 (✓可接受): ABBCD(A=1,B=2,C=1,D=1)
+    
+    追冷模式（cold_mode=True, 策略3）：
+      Priority 2 (☆最优): ABBCC(A=1,B=2,C=2,D=0), ABCCC(A=1,B=1,C=3,D=0), 
+                          ACCCD(A=1,C=3,D=1)
+      Priority 1 (✓可接受): ABBBC(A=1,B=3,C=1,D=0) 或 ABBBD(A=1,B=3,C=0,D=1)
+    """
+    a = sum(1 for n in main_vals if 1 <= n <= 9)
+    b = sum(1 for n in main_vals if 10 <= n <= 20)
+    c = sum(1 for n in main_vals if 21 <= n <= 29)
+    d = sum(1 for n in main_vals if 30 <= n <= 35)
+
+    if a + b + c + d != 5:
+        return 0
+    if a != 1:          # A区固定1个
+        return 0
+
+    if cold_mode:
+        # ─── 追冷模式 ───
+        # Priority 2: C区偏多的冷号分布
+        if c >= 2:
+            # ABBCC: B=2,C=2,D=0
+            if b == 2 and c == 2 and d == 0:
+                return 2
+            # ABCCC: B=1,C=3,D=0
+            if b == 1 and c == 3 and d == 0:
+                return 2
+            # ACCCD: B=0,C=3,D=1
+            if b == 0 and c == 3 and d == 1:
+                return 2
+            # ABCCD: B=1,C=2,D=1 (变体)
+            if b == 1 and c == 2 and d == 1:
+                return 2
+        # Priority 1: 标准BBB+模式
+        if b == 3:
+            b_vals = [n for n in main_vals if 10 <= n <= 20]
+            if max(b_vals) - min(b_vals) <= 5:
+                if (c == 1 and d == 0) or (c == 0 and d == 1):
+                    return 1  # ABBBC 或 ABBBD
+        # 也接受标准BBC
+        if b == 2 and c == 1 and d == 1:
+            return 1
+        return 0
+
+    else:
+        # ─── 通用模式 ───
+        # Priority 2: BBB 模式（B=3, 相近）
+        if b == 3:
+            b_vals = [n for n in main_vals if 10 <= n <= 20]
+            if max(b_vals) - min(b_vals) <= 5:
+                if (c == 1 and d == 0) or (c == 0 and d == 1):
+                    return 2  # ABBBC ☆ 或 ABBBD ☆
+        # Priority 1: BBC 模式
+        if b == 2 and c == 1 and d == 1:
+            return 1  # ABBCD ✓
+        # B=3但范围不满足相近条件的，降低优先级
+        if b == 3:
+            if (c == 1 and d == 0) or (c == 0 and d == 1):
+                return 1  # B区跨度>5也算可接受但不是最优
+
+        return 0
+
+
 def _crf_score(main_vals, sub_vals, main_probs, sub_probs, cfg):
     """CRF-like global combination scoring.
     
@@ -508,11 +577,22 @@ def generate_recommendations(
     sub_hist_share = sub_counts / (sub_counts.sum() + epsilon)
     sub_recent_share = sub_win_counts / (sub_win_counts.sum() + epsilon)
     
-    def _run_strategy(strategy_probs_m, strategy_probs_s, rng_seed, n_candidates=500):
-        """Run one strategy: generate candidates, score with CRF, pick best."""
+    # DLT 区间分布过滤器（仅对大乐透生效，双色球保持原样）
+    is_dlt = (cfg.short == "dlt")
+    dlt_filter = _check_dlt_zone if is_dlt else None
+    dlt_cold_filter = (lambda v: _check_dlt_zone(v, cold_mode=True)) if is_dlt else None
+    dlt_candidates = 1200 if is_dlt else 500  # DLT需要更多候选以找到符合区间分布的
+
+    def _run_strategy(strategy_probs_m, strategy_probs_s, rng_seed, n_candidates=500, pattern_filter=None):
+        """Run one strategy: generate candidates, score with CRF, pick best.
+        
+        If pattern_filter is provided, only candidates passing the filter are scored.
+        """
         rng = random.Random(rng_seed)
         best_combo = None
         best_score = -999
+        # DLT multi-pass: track best per priority level
+        best_by_priority = {}  # priority -> (score, combo)
         
         for _ in range(n_candidates):
             m_ids = _weighted_sample(strategy_probs_m, cfg.main_count, rng)
@@ -520,10 +600,41 @@ def generate_recommendations(
             m_vals = [main_range[i] for i in m_ids]
             s_vals = [sub_range[i] for i in s_ids]
             
-            sc = _crf_score(m_vals, s_vals, strategy_probs_m, strategy_probs_s, cfg)
-            if sc > best_score:
-                best_score = sc
-                best_combo = (m_ids, s_ids)
+            # Pattern filter with priority scoring (for DLT)
+            if pattern_filter is not None:
+                pri = pattern_filter(m_vals) if callable(pattern_filter) else (1 if pattern_filter(m_vals) else 0)
+                if pri == 0:
+                    continue
+                sc = _crf_score(m_vals, s_vals, strategy_probs_m, strategy_probs_s, cfg)
+                # Track best per priority level
+                if pri not in best_by_priority or sc > best_by_priority[pri][0]:
+                    best_by_priority[pri] = (sc, (m_ids, s_ids))
+                if sc > best_score:
+                    best_score = sc
+                    best_combo = (m_ids, s_ids)
+            else:
+                sc = _crf_score(m_vals, s_vals, strategy_probs_m, strategy_probs_s, cfg)
+                if sc > best_score:
+                    best_score = sc
+                    best_combo = (m_ids, s_ids)
+        
+        # For DLT: prefer highest priority, fall back to lower
+        if pattern_filter is not None and best_by_priority:
+            for pri in sorted(best_by_priority.keys(), reverse=True):
+                sc, combo = best_by_priority[pri]
+                best_combo = combo
+                if pri >= 2:  # BBB found! prefer this
+                    break
+        
+        # If no valid combo found after filtering, try without filter
+        if best_combo is None and pattern_filter is not None:
+            logger.warning("未找到符合区间分布的组合，放宽约束重试")
+            return _run_strategy(strategy_probs_m, strategy_probs_s, rng_seed, n_candidates * 2, pattern_filter=None)
+        elif best_combo is None:
+            # Shouldn't happen, but fallback
+            m_ids = _weighted_sample(strategy_probs_m, cfg.main_count, rng)
+            s_ids = _weighted_sample(strategy_probs_s, cfg.sub_count, rng)
+            best_combo = (m_ids, s_ids)
         
         m_ids, s_ids = best_combo
         return sorted([main_range[i] for i in m_ids]), sorted([sub_range[i] for i in s_ids])
@@ -546,7 +657,7 @@ def generate_recommendations(
     m1_fused = _bayesian_fusion(m1_dict, w1, main_n)
     s1_fused = _bayesian_fusion(s1_dict, w1, sub_n)
     
-    main_1, sub_1 = _run_strategy(m1_fused, s1_fused, 101)
+    main_1, sub_1 = _run_strategy(m1_fused, s1_fused, 101, n_candidates=dlt_candidates, pattern_filter=dlt_filter)
     reason_1 = "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
     
     # ========================================================================
@@ -570,7 +681,7 @@ def generate_recommendations(
         {'window_boost': s2_boosted, 'decay': ensemble._model_sub_probs['decay_frequency']},
         {'window_boost': 0.65, 'decay': 0.35}, sub_n)
     
-    main_2, sub_2 = _run_strategy(m2_fused, s2_fused, 202)
+    main_2, sub_2 = _run_strategy(m2_fused, s2_fused, 202, n_candidates=dlt_candidates, pattern_filter=dlt_filter)
     reason_2 = "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
     
     # ========================================================================
@@ -605,7 +716,7 @@ def generate_recommendations(
             s3_strat[i] = s3_gap[i] * 0.15
     s3_strat = s3_strat / s3_strat.sum()
     
-    main_3, sub_3 = _run_strategy(m3_strat, s3_strat, 303)
+    main_3, sub_3 = _run_strategy(m3_strat, s3_strat, 303, n_candidates=dlt_candidates, pattern_filter=dlt_cold_filter)
     reason_3 = "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
     
     # ========================================================================
@@ -643,7 +754,7 @@ def generate_recommendations(
         {'markov': s4_boosted, 'decay': ensemble._model_sub_probs['decay_frequency']},
         {'markov': 0.7, 'decay': 0.3}, sub_n)
     
-    main_4, sub_4 = _run_strategy(m4_fused, s4_fused, 404)
+    main_4, sub_4 = _run_strategy(m4_fused, s4_fused, 404, n_candidates=dlt_candidates, pattern_filter=dlt_filter)
     reason_4 = "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
     
     # ========================================================================
@@ -680,18 +791,56 @@ def generate_recommendations(
     best_main5 = None
     best_sub5 = None
     best_score5 = -999
-    for _ in range(500):
+    # DLT: track best per priority level
+    s5_best_by_pri = {}  # priority -> (score, main_vals, sub_vals)
+    s5_n_candidates = dlt_candidates if is_dlt else 500
+    for _ in range(s5_n_candidates):
         m_ids = _weighted_sample(m5_scores, cfg.main_count, rng5)
         s_ids = _weighted_sample(s5_scores, cfg.sub_count, rng5)
         m_vals = [main_range[i] for i in m_ids]
         s_vals = [sub_range[i] for i in s_ids]
-        
-        # Use CRF scoring (already includes structural balance)
-        sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
-        if sc > best_score5:
-            best_score5 = sc
-            best_main5 = m_vals
-            best_sub5 = s_vals
+
+        # DLT 区间分布优先过滤
+        if is_dlt:
+            pri = _check_dlt_zone(m_vals)
+            if pri == 0:
+                continue
+            sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
+            # Track best per priority
+            if pri not in s5_best_by_pri or sc > s5_best_by_pri[pri][0]:
+                s5_best_by_pri[pri] = (sc, m_vals, s_vals)
+            if sc > best_score5:
+                best_score5 = sc
+                best_main5 = m_vals
+                best_sub5 = s_vals
+        else:
+            sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
+            if sc > best_score5:
+                best_score5 = sc
+                best_main5 = m_vals
+                best_sub5 = s_vals
+
+    # For DLT: prefer highest priority (BBB=2 > BBC=1)
+    if is_dlt and s5_best_by_pri:
+        for pri in sorted(s5_best_by_pri.keys(), reverse=True):
+            sc, m_vals, s_vals = s5_best_by_pri[pri]
+            best_main5, best_sub5 = m_vals, s_vals
+            if pri >= 2:  # BBB found! prefer this
+                break
+
+    # If no valid combo found for DLT, relax filter
+    if is_dlt and not s5_best_by_pri:
+        logger.warning("大乐透平衡策略未找到符合区间分布的组合，放宽约束")
+        for _ in range(1000):
+            m_ids = _weighted_sample(m5_scores, cfg.main_count, rng5)
+            s_ids = _weighted_sample(s5_scores, cfg.sub_count, rng5)
+            m_vals = [main_range[i] for i in m_ids]
+            s_vals = [sub_range[i] for i in s_ids]
+            sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
+            if sc > best_score5:
+                best_score5 = sc
+                best_main5 = m_vals
+                best_sub5 = s_vals
     
     main_5 = sorted(best_main5)
     sub_5 = sorted(best_sub5)

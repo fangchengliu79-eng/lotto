@@ -231,8 +231,18 @@ def render_page(cfg):
                 sl = "✅ 已比对" if status == "completed" else "⏳ 待开奖"
                 sc = "#059669" if status == "completed" else "#d97706"
                 st.markdown(f"<div class='metric-card'><div class='value' style='font-size:1.2rem;color:{sc};'>{sl}</div><div class='label'>状态</div></div>", unsafe_allow_html=True)
-            with c4: st.markdown(render_metric(created[:10] if created else "-", "日期"), unsafe_allow_html=True)
-            st.markdown("<hr>", unsafe_allow_html=True)
+            dd = latest_pred.get("draw_date", created[:10] if created else "-")
+            with c4:
+                st.markdown(render_metric(dd, "开奖日期"), unsafe_allow_html=True)
+            # 兑奖截止日期（60天）
+            from datetime import datetime, timedelta
+            if dd and dd != "待定" and len(dd) == 10:
+                try:
+                    draw_dt = datetime.strptime(dd, "%Y-%m-%d")
+                    deadline = draw_dt + timedelta(days=60)
+                    st.info(f"📅 **兑奖截止:** {deadline.strftime('%Y-%m-%d')}（自开奖日起 **60天**）")
+                except Exception:
+                    pass
 
             if status == "completed" and latest_pred.get("actual_draw"):
                 act = latest_pred["actual_draw"]
@@ -327,7 +337,7 @@ def render_page(cfg):
         else:
             st.markdown(f"<p style='color:#475569;font-size:0.85rem;'>共 {len(all_preds)} 条记录</p>", unsafe_allow_html=True)
             for pred in all_preds:
-                ps, pp, pc, pr = pred["status"], pred["period"], pred.get("created_at", ""), len(pred.get("recommendations", []))
+                ps, pp, pc, pr = pred["status"], pred["period"], pred.get("draw_date", pred.get("created_at", "")[:10] or ""), len(pred.get("recommendations", []))
                 if ps == "completed" and pred.get("summary"):
                     s = pred["summary"]
                     with st.expander(f"**期 {pp}** ✅ 已比对 · 最佳 {s['best_hits']} 个 · {pc}", expanded=False):
