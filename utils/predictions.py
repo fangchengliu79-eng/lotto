@@ -74,21 +74,28 @@ def _save_all(predictions: List[Dict], cfg):
 
     # 写每期独立文件（容灾备份）
     pred_dir = _pred_dir(cfg)
-    kept_periods = set()
+    kept_keys = set()
     for p in kept:
-        period = str(p["period"])
-        kept_periods.add(period)
-        pfile = pred_dir / f"{period}.json"
+        alg = p.get("algorithm", "ensemble")
+        key = f"{p['period']}_{alg}"
+        kept_keys.add(key)
+        pfile = pred_dir / f"{key}.json"
         with open(pfile, "w", encoding="utf-8") as f:
             json.dump(p, f, ensure_ascii=False, indent=2)
 
     # 清理超出的独立文件
     for f in pred_dir.glob("*.json"):
-        if f.stem not in kept_periods:
-            try:
-                f.unlink()
-            except Exception:
-                pass
+        # 兼容旧文件: period.json 或 period_algorithm.json
+        stem = f.stem
+        if stem in kept_keys:
+            continue
+        # 旧格式兼容: 如果 stem 是纯数字期号, 检查是否有任何算法用此期号
+        if stem.isdigit() and any(k.startswith(stem + "_") for k in kept_keys):
+            continue
+        try:
+            f.unlink()
+        except Exception:
+            pass
 
 
 def _convert(obj):
@@ -125,13 +132,14 @@ def get_next_draw_date(cfg) -> str:
     return "待定"
 
 
-def save_prediction(period: str, recommendations: list, cfg, models_used: list = None):
+def save_prediction(period: str, recommendations: list, cfg, models_used: list = None, algorithm: str = "ensemble"):
     """封存一组预测"""
     predictions = _load_all(cfg)
-    pred_id = f"pred_{period}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    pred_id = f"{algorithm}_{period}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     recommendations = _convert(recommendations)
     entry = {
         "id": pred_id,
+        "algorithm": algorithm,
         "period": str(period),
         "draw_date": get_next_draw_date(cfg),
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -151,7 +159,8 @@ def save_prediction(period: str, recommendations: list, cfg, models_used: list =
         "matches": None,
         "summary": None,
     }
-    existing = [p for p in predictions if p["period"] == str(period) and p["status"] != "archived"]
+    existing = [p for p in predictions if p["period"] == str(period) and p["status"] != "archived"
+                and (p.get("algorithm") == algorithm or (algorithm == "ensemble" and "algorithm" not in p))]
     if existing:
         predictions = [p for p in predictions if p["id"] != existing[0]["id"]]
     predictions.append(entry)
@@ -256,26 +265,29 @@ def compare_with_draw(prediction: Dict, df: pd.DataFrame, cfg) -> Optional[Dict]
     return prediction
 
 
-def auto_compare_latest(df: pd.DataFrame, cfg) -> Optional[Dict]:
-    """自动查找最新可比对的预测并比对"""
+def auto_compare_latest(df: pd.DataFrame, cfg) -> int:
+    """自动查找所有可比对的预测并比对，返回比对数量"""
     predictions = _load_all(cfg)
-    df_periods = set(df["period"].astype(str).values)  # 类型安全
+    df_periods = set(df["period"].astype(str).values)
+    compared_count = 0
     for pred in predictions:
-        if pred["status"] == "active":
-            period = str(pred["period"])
-            if period in df_periods:
-                get_logger(cfg).info(f"发现可比对预测: {period}")
-                updated = compare_with_draw(pred, df, cfg)
-                if updated:
-                    # 确保更新持久化到文件
-                    all_p = _load_all(cfg)
-                    for i, p in enumerate(all_p):
-                        if p.get("id") == updated.get("id") or p["period"] == str(updated["period"]):
-                            all_p[i] = updated
-                            break
-                    _save_all(all_p, cfg)
-                return updated
-    return None
+        if pred["status"] != "active":
+            continue
+        period = str(pred["period"])
+        if period not in df_periods:
+            continue
+        get_logger(cfg).info(f"发现可比对预测: {period} (algorithm={pred.get('algorithm','ensemble')})")
+        updated = compare_with_draw(pred, df, cfg)
+        if updated:
+            # 确保更新持久化到文件
+            all_p = _load_all(cfg)
+            for i, p in enumerate(all_p):
+                if p.get("id") == updated.get("id"):
+                    all_p[i] = updated
+                    break
+            _save_all(all_p, cfg)
+            compared_count += 1
+    return compared_count
 
 
 def get_recent_draws_html(df: pd.DataFrame, cfg, n: int = 10) -> str:

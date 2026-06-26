@@ -1,9 +1,9 @@
 {
-  "id": "pred_26069_20260617_091955",
+  "id": "pred_26069_20260618_154242",
   "period": "26069",
   "draw_date": "2026-06-18",
-  "created_at": "2026-06-17 09:19:55",
-  "status": "active",
+  "created_at": "2026-06-18 15:42:42",
+  "status": "completed",
   "models_used": [
     "frequency",
     "poisson",
@@ -62,37 +62,116 @@
     {
       "group": 4,
       "main": [
-        2,
-        12,
+        3,
+        10,
         15,
-        19,
-        27,
+        16,
+        29,
         30
       ],
       "sub": [
-        7
+        2
       ],
-      "score": 25.0,
+      "score": 26.1,
       "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
     },
     {
       "group": 5,
       "main": [
         4,
-        7,
+        8,
         14,
-        18,
+        15,
         23,
         31
       ],
       "sub": [
-        8
+        5
       ],
-      "score": 24.0,
+      "score": 25.5,
       "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
     }
   ],
-  "actual_draw": null,
-  "matches": null,
-  "summary": null
+  "actual_draw": {
+    "main": [
+      12,
+      14,
+      16,
+      17,
+      18,
+      32
+    ],
+    "sub": [
+      8
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 2,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 3,
+      "main_matches": [
+        12,
+        17
+      ],
+      "sub_matches": [
+        8
+      ],
+      "main_hits": 2,
+      "sub_hits": 1,
+      "total_hits": 3
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        16
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        14
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      12,
+      14,
+      16,
+      17,
+      18,
+      32
+    ],
+    "actual_sub": [
+      8
+    ],
+    "best_group": 3,
+    "best_hits": 3,
+    "avg_main_hits": 0.8,
+    "avg_sub_hits": 0.2,
+    "avg_total_hits": 1.0
+  }
 }

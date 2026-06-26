@@ -1,8 +1,8 @@
 {
-  "id": "pred_26068_20260618_094436",
-  "period": "26068",
-  "draw_date": "2026-06-20",
-  "created_at": "2026-06-18 09:44:36",
+  "id": "pred_26069_20260622_105447",
+  "period": "26069",
+  "draw_date": "2026-06-22",
+  "created_at": "2026-06-22 10:54:47",
   "status": "completed",
   "models_used": [
     "frequency",
@@ -94,14 +94,14 @@
   ],
   "actual_draw": {
     "main": [
-      3,
-      11,
       12,
+      19,
       21,
-      22
+      24,
+      29
     ],
     "sub": [
-      6,
+      3,
       10
     ]
   },
@@ -111,12 +111,10 @@
       "main_matches": [
         12
       ],
-      "sub_matches": [
-        6
-      ],
+      "sub_matches": [],
       "main_hits": 1,
-      "sub_hits": 1,
-      "total_hits": 2
+      "sub_hits": 0,
+      "total_hits": 1
     },
     {
       "group": 2,
@@ -128,47 +126,54 @@
     },
     {
       "group": 3,
-      "main_matches": [],
-      "sub_matches": [
-        6
+      "main_matches": [
+        24
       ],
-      "main_hits": 0,
+      "sub_matches": [
+        3
+      ],
+      "main_hits": 1,
       "sub_hits": 1,
-      "total_hits": 1
+      "total_hits": 2
     },
     {
       "group": 4,
-      "main_matches": [],
+      "main_matches": [
+        29
+      ],
       "sub_matches": [],
-      "main_hits": 0,
+      "main_hits": 1,
       "sub_hits": 0,
-      "total_hits": 0
+      "total_hits": 1
     },
     {
       "group": 5,
-      "main_matches": [],
+      "main_matches": [
+        19,
+        29
+      ],
       "sub_matches": [],
-      "main_hits": 0,
+      "main_hits": 2,
       "sub_hits": 0,
-      "total_hits": 0
+      "total_hits": 2
     }
   ],
   "summary": {
     "actual_main": [
-      3,
-      11,
       12,
+      19,
       21,
-      22
+      24,
+      29
     ],
     "actual_sub": [
-      6,
+      3,
       10
     ],
-    "best_group": 1,
+    "best_group": 3,
     "best_hits": 2,
-    "avg_main_hits": 0.2,
-    "avg_sub_hits": 0.4,
-    "avg_total_hits": 0.6
+    "avg_main_hits": 1.0,
+    "avg_sub_hits": 0.2,
+    "avg_total_hits": 1.2
   }
 }
