@@ -4,7 +4,7 @@
   "period": "26073",
   "draw_date": "2026-06-28",
   "created_at": "2026-06-26 10:13:33",
-  "status": "active",
+  "status": "completed",
   "models_used": [
     "frequency",
     "poisson",
@@ -93,7 +93,88 @@
       "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
     }
   ],
-  "actual_draw": null,
-  "matches": null,
-  "summary": null
+  "actual_draw": {
+    "main": [
+      9,
+      10,
+      13,
+      16,
+      19,
+      21
+    ],
+    "sub": [
+      8
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 2,
+      "main_matches": [
+        10,
+        13
+      ],
+      "sub_matches": [],
+      "main_hits": 2,
+      "sub_hits": 0,
+      "total_hits": 2
+    },
+    {
+      "group": 3,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        9,
+        13,
+        16
+      ],
+      "sub_matches": [],
+      "main_hits": 3,
+      "sub_hits": 0,
+      "total_hits": 3
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        9,
+        13,
+        16
+      ],
+      "sub_matches": [],
+      "main_hits": 3,
+      "sub_hits": 0,
+      "total_hits": 3
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      9,
+      10,
+      13,
+      16,
+      19,
+      21
+    ],
+    "actual_sub": [
+      8
+    ],
+    "best_group": 4,
+    "best_hits": 3,
+    "avg_main_hits": 1.6,
+    "avg_sub_hits": 0.0,
+    "avg_total_hits": 1.6
+  }
 }

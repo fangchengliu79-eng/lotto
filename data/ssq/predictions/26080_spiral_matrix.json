@@ -1,0 +1,99 @@
+{
+  "id": "spiral_matrix_26080_20260713_093754",
+  "algorithm": "spiral_matrix",
+  "period": "26080",
+  "draw_date": "2026-07-14",
+  "created_at": "2026-07-13 09:37:54",
+  "status": "active",
+  "models_used": [
+    "frequency",
+    "poisson",
+    "exponential_smoothing",
+    "monte_carlo"
+  ],
+  "recommendations": [
+    {
+      "group": 1,
+      "main": [
+        3,
+        9,
+        16,
+        18,
+        25,
+        30
+      ],
+      "sub": [
+        11
+      ],
+      "score": 26.8,
+      "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-6)优选"
+    },
+    {
+      "group": 2,
+      "main": [
+        7,
+        9,
+        11,
+        12,
+        14,
+        16
+      ],
+      "sub": [
+        11
+      ],
+      "score": 22.2,
+      "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
+    },
+    {
+      "group": 3,
+      "main": [
+        4,
+        12,
+        15,
+        21,
+        28,
+        31
+      ],
+      "sub": [
+        11
+      ],
+      "score": 21.1,
+      "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
+    },
+    {
+      "group": 4,
+      "main": [
+        7,
+        8,
+        10,
+        13,
+        17,
+        26
+      ],
+      "sub": [
+        16
+      ],
+      "score": 21.8,
+      "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
+    },
+    {
+      "group": 5,
+      "main": [
+        7,
+        9,
+        16,
+        18,
+        29,
+        32
+      ],
+      "sub": [
+        15
+      ],
+      "score": 29.8,
+      "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
+    }
+  ],
+  "actual_draw": null,
+  "matches": null,
+  "summary": null
+}

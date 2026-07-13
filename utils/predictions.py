@@ -19,15 +19,22 @@ def _pred_dir(cfg) -> Path:
 
 
 def _load_all(cfg) -> List[Dict]:
-    """加载所有预测 — 优先从独立文件恢复，单文件损坏不影响其他期"""
+    """加载所有预测 — 按 id 去重，单文件损坏不影响其他期"""
     pred_dir = _pred_dir(cfg)
     files = sorted(pred_dir.glob("*.json"))
     if files:
+        seen_ids = set()
         predictions = []
         for f in files:
             try:
                 with open(f, "r", encoding="utf-8") as fh:
-                    predictions.append(json.load(fh))
+                    record = json.load(fh)
+                rid = record.get("id")
+                if rid and rid in seen_ids:
+                    continue
+                if rid:
+                    seen_ids.add(rid)
+                predictions.append(record)
             except Exception:
                 get_logger(cfg).warning(f"读取预测文件失败: {f.name}")
         # 也尝试从旧式单文件加载并合并（迁移兼容）
@@ -37,9 +44,10 @@ def _load_all(cfg) -> List[Dict]:
                 with open(path, "r", encoding="utf-8") as f:
                     legacy = json.load(f)
                 if isinstance(legacy, list):
-                    legacy_periods = {p["period"] for p in predictions}
                     for p in legacy:
-                        if p["period"] not in legacy_periods:
+                        rid = p.get("id")
+                        if rid and rid not in seen_ids:
+                            seen_ids.add(rid)
                             predictions.append(p)
             except Exception:
                 pass
@@ -192,9 +200,11 @@ def get_prediction_by_period(period: str, cfg) -> Optional[Dict]:
     return None
 
 
-def get_all_predictions(cfg) -> List[Dict]:
-    """获取所有预测（按时间倒序）"""
+def get_all_predictions(cfg, include_archived: bool = False) -> List[Dict]:
+    """获取所有预测（按时间倒序），默认排除 archived 记录"""
     predictions = _load_all(cfg)
+    if not include_archived:
+        predictions = [p for p in predictions if p.get("status") != "archived"]
     predictions.sort(key=lambda p: p.get("created_at", ""), reverse=True)
     return predictions
 

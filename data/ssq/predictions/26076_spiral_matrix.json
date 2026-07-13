@@ -1,9 +1,9 @@
 {
-  "id": "spiral_matrix_26072_20260629_164752",
+  "id": "spiral_matrix_26076_20260703_143842",
   "algorithm": "spiral_matrix",
-  "period": "26072",
-  "draw_date": "2026-06-29",
-  "created_at": "2026-06-29 16:47:52",
+  "period": "26076",
+  "draw_date": "2026-07-05",
+  "created_at": "2026-07-03 14:38:42",
   "status": "completed",
   "models_used": [
     "frequency",
@@ -16,102 +16,102 @@
       "group": 1,
       "main": [
         3,
+        9,
         13,
-        15,
-        18,
-        26
+        16,
+        24,
+        30
       ],
       "sub": [
-        4,
-        12
+        10
       ],
-      "score": 35.3,
-      "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-5)优选"
+      "score": 29.2,
+      "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-6)优选"
     },
     {
       "group": 2,
       "main": [
-        3,
-        12,
-        13,
-        15,
-        21
+        1,
+        4,
+        22,
+        24,
+        25,
+        33
       ],
       "sub": [
-        6,
-        10
+        2
       ],
-      "score": 35.3,
+      "score": 32.0,
       "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
     },
     {
       "group": 3,
       "main": [
-        5,
+        4,
         16,
-        17,
-        19,
-        24
+        23,
+        28,
+        29,
+        31
       ],
       "sub": [
-        6,
-        11
+        3
       ],
-      "score": 37.4,
+      "score": 24.1,
       "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
     },
     {
       "group": 4,
       "main": [
-        5,
-        12,
-        13,
-        14,
-        26
+        1,
+        3,
+        22,
+        24,
+        27,
+        28
       ],
       "sub": [
-        2,
-        3
+        16
       ],
-      "score": 73.0,
+      "score": 25.1,
       "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
     },
     {
       "group": 5,
       "main": [
-        6,
-        15,
-        19,
-        20,
-        28
+        1,
+        8,
+        13,
+        16,
+        18,
+        25
       ],
       "sub": [
-        4,
-        11
+        3
       ],
-      "score": 41.5,
+      "score": 30.1,
       "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
     }
   ],
   "actual_draw": {
     "main": [
       1,
-      13,
-      26,
-      29,
-      30
+      3,
+      19,
+      20,
+      24,
+      25
     ],
     "sub": [
-      9,
-      11
+      7
     ]
   },
   "matches": [
     {
       "group": 1,
       "main_matches": [
-        13,
-        26
+        3,
+        24
       ],
       "sub_matches": [],
       "main_hits": 2,
@@ -121,61 +121,63 @@
     {
       "group": 2,
       "main_matches": [
-        13
+        1,
+        24,
+        25
       ],
       "sub_matches": [],
-      "main_hits": 1,
+      "main_hits": 3,
       "sub_hits": 0,
-      "total_hits": 1
+      "total_hits": 3
     },
     {
       "group": 3,
       "main_matches": [],
-      "sub_matches": [
-        11
-      ],
+      "sub_matches": [],
       "main_hits": 0,
-      "sub_hits": 1,
-      "total_hits": 1
+      "sub_hits": 0,
+      "total_hits": 0
     },
     {
       "group": 4,
       "main_matches": [
-        13,
-        26
+        1,
+        3,
+        24
+      ],
+      "sub_matches": [],
+      "main_hits": 3,
+      "sub_hits": 0,
+      "total_hits": 3
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        1,
+        25
       ],
       "sub_matches": [],
       "main_hits": 2,
       "sub_hits": 0,
       "total_hits": 2
-    },
-    {
-      "group": 5,
-      "main_matches": [],
-      "sub_matches": [
-        11
-      ],
-      "main_hits": 0,
-      "sub_hits": 1,
-      "total_hits": 1
     }
   ],
   "summary": {
     "actual_main": [
       1,
-      13,
-      26,
-      29,
-      30
+      3,
+      19,
+      20,
+      24,
+      25
     ],
     "actual_sub": [
-      9,
-      11
+      7
     ],
-    "best_group": 1,
-    "best_hits": 2,
-    "avg_main_hits": 1.0,
-    "avg_sub_hits": 0.4,
-    "avg_total_hits": 1.4
+    "best_group": 2,
+    "best_hits": 3,
+    "avg_main_hits": 2.0,
+    "avg_sub_hits": 0.0,
+    "avg_total_hits": 2.0
   }
 }

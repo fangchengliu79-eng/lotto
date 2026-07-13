@@ -511,7 +511,7 @@ class SpiralMatrixPredictor:
 
             return {
                 "main": list(best_combo),
-                "sub": list(best_back),
+                "sub": sorted(list(best_back)),
                 "score": round(main_score + sub_score, 1),
                 "reason": pool_name,
             }
