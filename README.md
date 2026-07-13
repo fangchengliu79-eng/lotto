@@ -163,6 +163,59 @@ chmod +x /root/lotto/start.sh
 | 双色球 (SSQ) | 周二、周四、周日 | 21:15 |
 
 ---
+---
+## 🔖 版本控制与回滚
+
+### 已打标签
+
+| 标签名 | 对应阶段 | 日期 |
+|--------|---------|------|
+| `firststage` | v1.0 双色球+大乐透统一预测 | 2026-05 |
+| `secondstage` | 多算法融合+预测生命周期 | 2026-05 |
+| `fourstage` | 预测生命周期自动流转+数据容灾 | 2026-06 |
+| `spiral-matrix-v2` | **当前** — 螺旋矩阵覆盖设计完整版 | 2026-07-13 |
+
+### 一键回滚命令
+
+**回滚到上一个稳定版本（fourstage）：**
+```bash
+cd /root/lotto
+git checkout fourstage
+# 重启服务
+pkill -f "streamlit.*lotto" 2>/dev/null; sleep 1
+streamlit run app.py --server.port 8502 --server.headless true &
+```
+
+**回滚到指定标签：**
+```bash
+cd /root/lotto
+git checkout <tag-name>
+# 同上重启
+```
+
+**查看所有可回滚版本：**
+```bash
+cd /root/lotto && git tag -l
+```
+
+**保留当前数据但回滚代码：**
+```bash
+cd /root/lotto
+# 先备份当前数据
+cp data/dlt/predictions.json data/dlt/predictions.json.bak
+cp data/ssq/predictions.json data/ssq/predictions.json.bak
+# 回滚代码但保留工作区文件
+git checkout <tag-name> -- .
+# 恢复最新数据
+cp data/dlt/predictions.json.bak data/dlt/predictions.json
+cp data/ssq/predictions.json.bak data/ssq/predictions.json
+rm data/dlt/predictions.json.bak data/ssq/predictions.json.bak
+# 重启
+```
+
+> 只需告诉我 **"回滚到 <标签名>"**，我会自动执行以上命令。
+
+---
 
 ## ❗ 注意事项
 
