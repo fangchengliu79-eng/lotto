@@ -526,11 +526,11 @@ def generate_recommendations(
     4. Picks the best combination
     
     Strategies:
-    1. 🔥高频热号 — Decay-weighted frequency (recent > old)
-    2. 📈近期趋势 — Sliding window + trend boost
-    3. ❄️追冷 — Cold numbers with gap recency signal
-    4. 🔗马尔可夫 — Markov transition + neighborhood
-    5. ⚖️平衡 — Mid-frequency with structural balance
+    1. ❄️追冷A — Cold numbers 30% pool + gap recency 75%
+    2. ❄️追冷B — Cold numbers 35% pool + gap recency 65%
+    3. ❄️追冷C — Cold numbers 40% pool + gap recency 80%
+    4. ❄️追冷D — Cold numbers 50% pool + gap recency 70%
+    5. ❄️追冷E — Cold numbers 55% pool + gap recency 60%
     """
     logger = get_logger(cfg)
     logger.info("CRF-enhanced 5-strategy generation for %s ...", cfg.name)
@@ -640,211 +640,192 @@ def generate_recommendations(
         return sorted([main_range[i] for i in m_ids]), sorted([sub_range[i] for i in s_ids])
     
     # ========================================================================
-    # Strategy 1: 🔥高频热号 (Decay-weighted)
-    #    Uses decay_frequency + gap_recency via Bayesian fusion.
-    #    CRF scoring ensures the combination is structurally sound, not just
-    #    a collection of the hottest individual numbers.
+    # 5× ❄️追冷策略 + 跨策略去重约束（前区+后区）
+    #    所有5组统一使用追冷算法。每组跑完后记录已选号码，
+    #    同一号码最多出现在3组，同一号码对最多出现在3组。
     # ========================================================================
-    m1_dict = {
-        'decay': ensemble._model_main_probs['decay_frequency'],
-        'gap': ensemble._model_main_probs['gap_recency'],
-    }
-    s1_dict = {
-        'decay': ensemble._model_sub_probs['decay_frequency'],
-        'gap': ensemble._model_sub_probs['gap_recency'],
-    }
-    w1 = {'decay': 0.7, 'gap': 0.3}
-    m1_fused = _bayesian_fusion(m1_dict, w1, main_n)
-    s1_fused = _bayesian_fusion(s1_dict, w1, sub_n)
-    
-    main_1, sub_1 = _run_strategy(m1_fused, s1_fused, 101, n_candidates=dlt_candidates, pattern_filter=dlt_filter)
-    reason_1 = "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-    
-    # ========================================================================
-    # Strategy 2: 📈近期趋势
-    #    Sliding window + trend boost (recent share - historical share).
-    #    Numbers with rising frequency get priority.
-    # ========================================================================
-    m2_raw = ensemble._model_main_probs['sliding_window']
-    s2_raw = ensemble._model_sub_probs['sliding_window']
-    
-    main_trend_boost = np.maximum(0, main_recent_share - main_hist_share)
-    m2_boosted = m2_raw + main_trend_boost * 0.4
-    
-    sub_trend_boost = np.maximum(0, sub_recent_share - sub_hist_share)
-    s2_boosted = s2_raw + sub_trend_boost * 0.4
-    
-    m2_fused = _bayesian_fusion(
-        {'window_boost': m2_boosted, 'decay': ensemble._model_main_probs['decay_frequency']},
-        {'window_boost': 0.65, 'decay': 0.35}, main_n)
-    s2_fused = _bayesian_fusion(
-        {'window_boost': s2_boosted, 'decay': ensemble._model_sub_probs['decay_frequency']},
-        {'window_boost': 0.65, 'decay': 0.35}, sub_n)
-    
-    main_2, sub_2 = _run_strategy(m2_fused, s2_fused, 202, n_candidates=dlt_candidates, pattern_filter=dlt_filter)
-    reason_2 = "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-    
-    # ========================================================================
-    # Strategy 3: ❄️追冷
-    #    Cold numbers (bottom 40% by frequency) with gap recency signal.
-    #    Gap recency measures "unusually long absence" better than raw Poisson.
-    # ========================================================================
-    main_freq_rank = np.argsort(main_counts)
-    sub_freq_rank = np.argsort(sub_counts)
-    cold_th_m = max(1, int(main_n * 0.4))
-    cold_th_s = max(1, int(sub_n * 0.4))
-    cold_m = set(main_freq_rank[:cold_th_m])
-    cold_s = set(sub_freq_rank[:cold_th_s])
-    
-    m3_gap = ensemble._model_main_probs['gap_recency']
-    s3_gap = ensemble._model_sub_probs['gap_recency']
-    
-    # Cold strategy: emphasize cold numbers, boost ones with high gap scores
-    m3_strat = np.zeros(main_n)
-    for i in range(main_n):
-        if i in cold_m:
-            m3_strat[i] = m3_gap[i] * 0.7 + main_recent_share[i] * 0.3
-        else:
-            m3_strat[i] = m3_gap[i] * 0.15
-    m3_strat = m3_strat / m3_strat.sum()
-    
-    s3_strat = np.zeros(sub_n)
-    for i in range(sub_n):
-        if i in cold_s:
-            s3_strat[i] = s3_gap[i] * 0.7 + sub_recent_share[i] * 0.3
-        else:
-            s3_strat[i] = s3_gap[i] * 0.15
-    s3_strat = s3_strat / s3_strat.sum()
-    
-    main_3, sub_3 = _run_strategy(m3_strat, s3_strat, 303, n_candidates=dlt_candidates, pattern_filter=dlt_cold_filter)
-    reason_3 = "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-    
-    # ========================================================================
-    # Strategy 4: 🔗马尔可夫
-    #    Markov transition + neighborhood of last draw's numbers.
-    #    Boost numbers in ±2 range of last draw's winners.
-    # ========================================================================
-    m4_raw = ensemble._model_main_probs['markov_chain']
-    s4_raw = ensemble._model_sub_probs['markov_chain']
-    
-    m4_boosted = np.array(m4_raw)
-    s4_boosted = np.array(s4_raw)
-    
-    if len(main_nums) > 0:
-        last_main_vals = main_nums[0]
-        for n in last_main_vals:
-            idx = n - cfg.main_min
-            m4_boosted[idx] *= 1.2  # repeat boost
-            for offset in range(-2, 3):
-                neighbor = n + offset
-                if cfg.main_min <= neighbor <= cfg.main_max:
-                    m4_boosted[neighbor - cfg.main_min] *= 1.15
-        m4_boosted = m4_boosted / m4_boosted.sum()
-    
-    if len(sub_nums) > 0:
-        for n in sub_nums[0]:
-            s4_boosted[n - cfg.sub_min] *= 1.3
-        s4_boosted = s4_boosted / s4_boosted.sum()
-    
-    # Bayesian fusion with decay frequency for stability
-    m4_fused = _bayesian_fusion(
-        {'markov': m4_boosted, 'decay': ensemble._model_main_probs['decay_frequency']},
-        {'markov': 0.7, 'decay': 0.3}, main_n)
-    s4_fused = _bayesian_fusion(
-        {'markov': s4_boosted, 'decay': ensemble._model_sub_probs['decay_frequency']},
-        {'markov': 0.7, 'decay': 0.3}, sub_n)
-    
-    main_4, sub_4 = _run_strategy(m4_fused, s4_fused, 404, n_candidates=dlt_candidates, pattern_filter=dlt_filter)
-    reason_4 = "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-    
-    # ========================================================================
-    # Strategy 5: ⚖️平衡
-    #    Exclude extreme hot (top 30%) and extreme cold (bottom 30%).
-    #    Use CRF scoring heavily weighted toward structural coherence.
-    #    This strategy's primary goal is STRUCTURAL SOUNDNESS, not hot/cold.
-    # ========================================================================
-    m5_raw = ensemble._model_main_probs['decay_frequency']
-    s5_raw = ensemble._model_sub_probs['decay_frequency']
-    main_ranked = np.argsort(m5_raw)[::-1]
-    sub_ranked = np.argsort(s5_raw)[::-1]
-    
-    main_mid_start = int(main_n * 0.3)
-    main_mid_end = int(main_n * 0.7)
-    sub_mid_start = int(sub_n * 0.25)
-    sub_mid_end = int(sub_n * 0.75)
-    
-    # Build mid-zone preference
-    m5_scores = np.ones(main_n) * 0.2
-    for i in main_ranked[main_mid_start:main_mid_end]:
-        m5_scores[i] = 1.0
-    for i in list(main_ranked[int(main_n*0.2):int(main_n*0.3)]) + list(main_ranked[int(main_n*0.7):int(main_n*0.8)]):
-        m5_scores[i] = 0.5
-    m5_scores = m5_scores / m5_scores.sum()
-    
-    s5_scores = np.ones(sub_n) * 0.2
-    for i in sub_ranked[sub_mid_start:sub_mid_end]:
-        s5_scores[i] = 1.0
-    s5_scores = s5_scores / s5_scores.sum()
-    
-    # For balanced strategy: run CRF scoring with EXTRA structural weight
-    rng5 = random.Random(505)
-    best_main5 = None
-    best_sub5 = None
-    best_score5 = -999
-    # DLT: track best per priority level
-    s5_best_by_pri = {}  # priority -> (score, main_vals, sub_vals)
-    s5_n_candidates = dlt_candidates if is_dlt else 500
-    for _ in range(s5_n_candidates):
-        m_ids = _weighted_sample(m5_scores, cfg.main_count, rng5)
-        s_ids = _weighted_sample(s5_scores, cfg.sub_count, rng5)
-        m_vals = [main_range[i] for i in m_ids]
-        s_vals = [sub_range[i] for i in s_ids]
 
-        # DLT 区间分布优先过滤
-        if is_dlt:
-            pri = _check_dlt_zone(m_vals)
-            if pri == 0:
-                continue
-            sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
-            # Track best per priority
-            if pri not in s5_best_by_pri or sc > s5_best_by_pri[pri][0]:
-                s5_best_by_pri[pri] = (sc, m_vals, s_vals)
-            if sc > best_score5:
-                best_score5 = sc
-                best_main5 = m_vals
-                best_sub5 = s_vals
-        else:
-            sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
-            if sc > best_score5:
-                best_score5 = sc
-                best_main5 = m_vals
-                best_sub5 = s_vals
+    # 跟踪已选号码及号码对（前区+后区，跨策略约束）
+    used_main_counts = {}      # 前区 number -> total appearances across groups
+    used_main_pairs = {}       # 前区 frozenset({a,b}) -> total appearances across groups
+    used_sub_counts = {}       # 后区 number -> total appearances across groups
+    used_sub_pairs = {}        # 后区 frozenset({a,b}) -> total appearances across groups
 
-    # For DLT: prefer highest priority (BBB=2 > BBC=1)
-    if is_dlt and s5_best_by_pri:
-        for pri in sorted(s5_best_by_pri.keys(), reverse=True):
-            sc, m_vals, s_vals = s5_best_by_pri[pri]
-            best_main5, best_sub5 = m_vals, s_vals
-            if pri >= 2:  # BBB found! prefer this
-                break
+    def _check_constraints(main_result, sub_result, max_num=3, max_pair=3):
+        """检查前区和后区的号码和号码对是否超过约束上限。"""
+        # 前区号码检查
+        for n in main_result:
+            if used_main_counts.get(n, 0) >= max_num:
+                return False
+        # 前区号码对检查
+        sorted_m = sorted(main_result)
+        for i in range(len(sorted_m)):
+            for j in range(i + 1, len(sorted_m)):
+                pair = frozenset([sorted_m[i], sorted_m[j]])
+                if used_main_pairs.get(pair, 0) >= max_pair:
+                    return False
+        # 后区号码检查
+        for n in sub_result:
+            if used_sub_counts.get(n, 0) >= max_num:
+                return False
+        # 后区号码对检查（仅当有2个后区号码时）
+        if len(sub_result) >= 2:
+            sorted_s = sorted(sub_result)
+            for i in range(len(sorted_s)):
+                for j in range(i + 1, len(sorted_s)):
+                    pair = frozenset([sorted_s[i], sorted_s[j]])
+                    if used_sub_pairs.get(pair, 0) >= max_pair:
+                        return False
+        return True
 
-    # If no valid combo found for DLT, relax filter
-    if is_dlt and not s5_best_by_pri:
-        logger.warning("大乐透平衡策略未找到符合区间分布的组合，放宽约束")
-        for _ in range(1000):
-            m_ids = _weighted_sample(m5_scores, cfg.main_count, rng5)
-            s_ids = _weighted_sample(s5_scores, cfg.sub_count, rng5)
-            m_vals = [main_range[i] for i in m_ids]
-            s_vals = [sub_range[i] for i in s_ids]
-            sc = _crf_score(m_vals, s_vals, m5_scores, s5_scores, cfg)
-            if sc > best_score5:
-                best_score5 = sc
-                best_main5 = m_vals
-                best_sub5 = s_vals
-    
-    main_5 = sorted(best_main5)
-    sub_5 = sorted(best_sub5)
-    reason_5 = "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
+    def _update_constraints(main_result, sub_result):
+        """更新前区和后区的号码和号码对使用计数。"""
+        # 前区
+        for n in main_result:
+            used_main_counts[n] = used_main_counts.get(n, 0) + 1
+        sorted_m = sorted(main_result)
+        for i in range(len(sorted_m)):
+            for j in range(i + 1, len(sorted_m)):
+                pair = frozenset([sorted_m[i], sorted_m[j]])
+                used_main_pairs[pair] = used_main_pairs.get(pair, 0) + 1
+        # 后区
+        for n in sub_result:
+            used_sub_counts[n] = used_sub_counts.get(n, 0) + 1
+        if len(sub_result) >= 2:
+            sorted_s = sorted(sub_result)
+            for i in range(len(sorted_s)):
+                for j in range(i + 1, len(sorted_s)):
+                    pair = frozenset([sorted_s[i], sorted_s[j]])
+                    used_sub_pairs[pair] = used_sub_pairs.get(pair, 0) + 1
+
+    def _make_cold_strategy(cold_pct, gap_weight, recent_weight, seed, name):
+        """构造追冷概率分布并运行策略。
+        
+        约束保障：
+          - 前区和后区每个号码最多出现在3组(不超过3次)
+          - 前区和后区每组号码对最多在3组中出现(不超过3次)
+          - 违反时重新生成，最多重试3次
+        """
+        main_freq_rank = np.argsort(main_counts)
+        sub_freq_rank = np.argsort(sub_counts)
+        cold_th_m = max(1, int(main_n * cold_pct))
+        cold_th_s = max(1, int(sub_n * cold_pct))
+        cold_m = set(main_freq_rank[:cold_th_m])
+        cold_s = set(sub_freq_rank[:cold_th_s])
+
+        m_gap = ensemble._model_main_probs['gap_recency']
+        s_gap = ensemble._model_sub_probs['gap_recency']
+
+        def _build_probs(penalty_level=1.0):
+            """构建当前概率分布，根据已用计数施加约束惩罚。"""
+            m_strat = np.zeros(main_n)
+            for i in range(main_n):
+                if i in cold_m:
+                    m_strat[i] = m_gap[i] * gap_weight + main_recent_share[i] * recent_weight
+                else:
+                    m_strat[i] = m_gap[i] * (recent_weight * 0.2)
+
+            s_strat = np.zeros(sub_n)
+            for i in range(sub_n):
+                if i in cold_s:
+                    s_strat[i] = s_gap[i] * gap_weight + sub_recent_share[i] * recent_weight
+                else:
+                    s_strat[i] = s_gap[i] * (recent_weight * 0.2)
+
+            # ── 前区号码级别约束：已出现次数按级惩罚 ──
+            for num, count in used_main_counts.items():
+                idx = num - cfg.main_min
+                if 0 <= idx < main_n:
+                    if count >= 3:
+                        m_strat[idx] *= (0.01 * penalty_level)  # 已3次，几乎禁用
+                    elif count >= 2:
+                        m_strat[idx] *= (0.10 * penalty_level)  # 已2次，大幅压低
+
+            # ── 前区号码对约束：已出现多次的号码对，压低组合中各号码的分量 ──
+            pair_penalty_nums = set()
+            for pair, pair_count in used_main_pairs.items():
+                if pair_count >= 2:
+                    for n in pair:
+                        idx = n - cfg.main_min
+                        if 0 <= idx < main_n:
+                            pair_penalty_nums.add(idx)
+            for idx in pair_penalty_nums:
+                m_strat[idx] *= (0.10 * penalty_level)
+
+            # ── 后区号码级别约束：已出现次数按级惩罚 ──
+            for num, count in used_sub_counts.items():
+                idx = num - cfg.sub_min
+                if 0 <= idx < sub_n:
+                    if count >= 3:
+                        s_strat[idx] *= (0.01 * penalty_level)  # 已3次，几乎禁用
+                    elif count >= 2:
+                        s_strat[idx] *= (0.10 * penalty_level)  # 已2次，大幅压低
+
+            # ── 后区号码对约束 ──
+            sub_pair_penalty = set()
+            for pair, pair_count in used_sub_pairs.items():
+                if pair_count >= 2:
+                    for n in pair:
+                        idx = n - cfg.sub_min
+                        if 0 <= idx < sub_n:
+                            sub_pair_penalty.add(idx)
+            for idx in sub_pair_penalty:
+                s_strat[idx] *= (0.10 * penalty_level)
+
+            m_strat = np.maximum(m_strat, 1e-10)
+            m_strat = m_strat / m_strat.sum()
+            s_strat = np.maximum(s_strat, 1e-10)
+            s_strat = s_strat / s_strat.sum()
+            return m_strat, s_strat
+
+        # 首次尝试
+        m_strat, s_strat = _build_probs(penalty_level=1.0)
+
+        main_result, sub_result = _run_strategy(
+            m_strat, s_strat, seed,
+            n_candidates=dlt_candidates,
+            pattern_filter=dlt_cold_filter
+        )
+
+        # 若不满足约束，重试最多2次（每次加大惩罚力度，换种子）
+        max_retries = 2
+        retry_count = 0
+        while not _check_constraints(main_result, sub_result) and retry_count < max_retries:
+            retry_count += 1
+            new_seed = seed + retry_count * 137
+            pen_level = 1.0 + retry_count * 2.0  # 逐次加大惩罚
+            m_strat2, s_strat2 = _build_probs(penalty_level=pen_level)
+            main_result, sub_result = _run_strategy(
+                m_strat2, s_strat2, new_seed,
+                n_candidates=dlt_candidates * (1 + retry_count),
+                pattern_filter=dlt_cold_filter
+            )
+
+        # 更新约束跟踪（前区+后区）
+        _update_constraints(main_result, sub_result)
+
+        return main_result, sub_result
+
+    # 策略参数: (cold_pct, gap_weight, recent_weight, seed, name)
+    # 各策略采用不同的 cold_pct 和权重组合，保证号池有差异
+    cold_configs = [
+        (0.30, 0.75, 0.25, 101, "追冷A: 冷号30%+间隔异常75%"),
+        (0.35, 0.65, 0.35, 202, "追冷B: 冷号35%+间隔异常65%"),
+        (0.40, 0.80, 0.20, 303, "追冷C: 冷号40%+间隔异常80%"),
+        (0.50, 0.70, 0.30, 404, "追冷D: 冷号50%+间隔异常70%"),
+        (0.55, 0.60, 0.40, 505, "追冷E: 冷号55%+间隔异常60%"),
+    ]
+
+    cold_results = []
+    for cold_pct, gap_w, recent_w, seed, name in cold_configs:
+        main_r, sub_r = _make_cold_strategy(cold_pct, gap_w, recent_w, seed, name)
+        cold_results.append((main_r, sub_r, name))
+
+    main_1, sub_1, reason_1 = cold_results[0]
+    main_2, sub_2, reason_2 = cold_results[1]
+    main_3, sub_3, reason_3 = cold_results[2]
+    main_4, sub_4, reason_4 = cold_results[3]
+    main_5, sub_5, reason_5 = cold_results[4]
     
     # ========================================================================
     # Build output

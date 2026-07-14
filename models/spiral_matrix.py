@@ -405,7 +405,7 @@ class SpiralMatrixPredictor:
             sub_probs: Optional[np.ndarray] = None,
             n_main: int = 12,
         ) -> Optional[Dict]:
-            """单个策略: 选池 -> 补齐 -> 轮转 -> CRF优选"""
+            """单个策略: 选池 -> 补齐 -> 轮转 -> CRF优选 -> 约束检查"""
             if len(pool) < k:
                 return None
             pool = pool[:min(n_main, len(pool))]
@@ -505,7 +505,15 @@ class SpiralMatrixPredictor:
                 scored.append((combo, score))
 
             scored.sort(key=lambda x: -x[1])
-            best_combo = scored[0][0]
+            # 选择满足跨策略约束（前区+后区）的最高分组合
+            best_combo = None
+            for combo, _ in scored:
+                if _check_constraints(sorted(combo), best_back):
+                    best_combo = combo
+                    break
+            if best_combo is None:
+                # 全部不满足约束时，选择得分最高的
+                best_combo = scored[0][0]
             main_score = sum(main_decay_prob[n - main_min] for n in best_combo) * 100
             sub_score = sum(sp[n - sub_min] for n in best_back) * 100
 
@@ -516,106 +524,205 @@ class SpiralMatrixPredictor:
                 "reason": pool_name,
             }
 
-        # ═══ 5个独立策略 ═══
-        # 每个策略使用不同的蓝球概率分布
+        # ═══ 5个独立冷号轮询策略 ═══
+        # 统一使用冷号池，通过不同池容量和蓝球概率区分组合
 
-        # 策略1: 🔥热号轮转 (蓝球: 衰减加权热号)
-        pool1 = _pick_top_n(main_decay_prob, 12)
-        r1 = _run_strategy(pool1,
-            f"🔥热号轮转: 衰减加权前{min(12, len(pool1))}码->旋转矩阵(4-if-{k})优选",
-            sub_probs=sub_decay_prob, n_main=12)
-
-        # 策略2: 📈趋势轮转 (蓝球: 近期窗口热号)
-        pool2_all = _pick_top_n(main_win_prob, 14)
-        if len(main_nums) > 0:
-            last_main = main_nums[0]
-            neighbors = set()
-            for n in last_main:
-                for offset in range(-2, 3):
-                    nn = n + offset
-                    if main_min <= nn <= main_max:
-                        neighbors.add(nn)
-            pool2 = list(dict.fromkeys(list(neighbors) + pool2_all))[:12]
-        else:
-            pool2 = pool2_all[:12]
-        r2 = _run_strategy(pool2,
-            f"📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选",
-            sub_probs=sub_win_prob, n_main=12)
-
-        # 策略3: ❄️冷号轮转 (蓝球: 低频冷号)
-        main_ranked_asc = sorted(
+        # 所有号码按频率升序排列
+        main_all_ranked = sorted(
             [(i + main_min, main_counts[i]) for i in range(len(main_counts))],
             key=lambda x: x[1]
         )
-        pool3 = [num for num, _ in main_ranked_asc[:14]]
-        # 蓝球冷号概率: 反比例于频率
-        sub_cold_prob = np.maximum(sub_counts.max() - sub_counts + 1, 1)
-        sub_cold_prob = sub_cold_prob / sub_cold_prob.sum()
-        r3 = _run_strategy(pool3,
-            f"❄️冷号轮转: 低频后{min(14, len(pool3))}码->旋转矩阵优选",
-            sub_probs=sub_cold_prob, n_main=14)
 
-        # 策略4: 🔗邻域轮转 (蓝球: 上期蓝球+附近)
-        if len(main_nums) > 0:
-            last_main = main_nums[0]
-            pool4_base = set(last_main)
-            for n in last_main:
-                for offset in range(-1, 2):
-                    nn = n + offset
-                    if main_min <= nn <= main_max:
-                        pool4_base.add(nn)
-            hot_all = _pick_top_n(main_decay_prob, 20)
-            for n in hot_all:
-                if len(pool4_base) >= 14:
-                    break
-                pool4_base.add(n)
-            pool4 = sorted(pool4_base)[:14]
-        else:
-            pool4 = _pick_top_n(main_decay_prob, 12)
-        # 蓝球: 上期蓝球邻域加权
-        sub_nearby_prob = np.ones(sub_range_size) * 0.2
-        if len(sub_nums) > 0:
-            last_sub = sub_nums[0]
-            for n in last_sub:
-                idx = n - sub_min
-                sub_nearby_prob[idx] *= 3.0
-                for offset in range(-1, 2):
-                    ni = n + offset
-                    if sub_min <= ni <= sub_max:
-                        sub_nearby_prob[ni - sub_min] *= 1.5
-        sub_nearby_prob = sub_nearby_prob / sub_nearby_prob.sum()
-        r4 = _run_strategy(pool4,
-            f"🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选",
-            sub_probs=sub_nearby_prob, n_main=14)
+        # 跨策略约束：前区+后区号码和号码对使用计数
+        used_main_counts = {}      # 前区 number -> total appearances across groups
+        used_main_pairs = {}       # 前区 frozenset({a,b}) -> total appearances across groups
+        used_sub_counts = {}       # 后区 number -> total appearances across groups
+        used_sub_pairs = {}        # 后区 frozenset({a,b}) -> total appearances across groups
 
-        # 策略5: ⚖️平衡轮转 (蓝球: 避开极端冷热)
-        main_ranked_desc = sorted(
-            [(i + main_min, main_decay_prob[i]) for i in range(len(main_decay_prob))],
+        def _check_constraints(main_result, sub_result, max_num=3, max_pair=3):
+            """检查前区和后区的号码和号码对是否超过约束上限。"""
+            # 前区号码
+            for n in main_result:
+                if used_main_counts.get(n, 0) >= max_num:
+                    return False
+            sorted_m = sorted(main_result)
+            for i in range(len(sorted_m)):
+                for j in range(i + 1, len(sorted_m)):
+                    pair = frozenset([sorted_m[i], sorted_m[j]])
+                    if used_main_pairs.get(pair, 0) >= max_pair:
+                        return False
+            # 后区号码
+            for n in sub_result:
+                if used_sub_counts.get(n, 0) >= max_num:
+                    return False
+            # 后区号码对（仅当≥2个后区号）
+            if len(sub_result) >= 2:
+                sorted_s = sorted(sub_result)
+                for i in range(len(sorted_s)):
+                    for j in range(i + 1, len(sorted_s)):
+                        pair = frozenset([sorted_s[i], sorted_s[j]])
+                        if used_sub_pairs.get(pair, 0) >= max_pair:
+                            return False
+            return True
+
+        def _update_constraints(main_result, sub_result):
+            """更新前区和后区的号码和号码对使用计数。"""
+            # 前区
+            for n in main_result:
+                used_main_counts[n] = used_main_counts.get(n, 0) + 1
+            sorted_m = sorted(main_result)
+            for i in range(len(sorted_m)):
+                for j in range(i + 1, len(sorted_m)):
+                    pair = frozenset([sorted_m[i], sorted_m[j]])
+                    used_main_pairs[pair] = used_main_pairs.get(pair, 0) + 1
+            # 后区
+            for n in sub_result:
+                used_sub_counts[n] = used_sub_counts.get(n, 0) + 1
+            if len(sub_result) >= 2:
+                sorted_s = sorted(sub_result)
+                for i in range(len(sorted_s)):
+                    for j in range(i + 1, len(sorted_s)):
+                        pair = frozenset([sorted_s[i], sorted_s[j]])
+                        used_sub_pairs[pair] = used_sub_pairs.get(pair, 0) + 1
+
+        def _run_cold_strategy(n_pool, sub_prob_name, seed, label):
+            """从冷号池构建轮转组合，过滤已超限号码。"""
+            pool = [num for num, _ in main_all_ranked[:n_pool]]
+            # 过滤已出现3+次的号码（跨策略约束）
+            pool = [n for n in pool if used_main_counts.get(n, 0) < 3]
+            # 如果过滤后太少，补充冷区次冷号码
+            if len(pool) < 8:
+                extra = [num for num, _ in main_all_ranked[n_pool:n_pool + 6]
+                         if used_main_counts.get(num, 0) < 3 and num not in pool]
+                pool.extend(extra)
+            # 蓝球: 根据给定概率加权
+            # 蓝球: 根据给定概率加权
+            if sub_prob_name == 'cold':
+                sp = np.maximum(sub_counts.max() - sub_counts + 1, 1)
+                sp = sp / sp.sum()
+            elif sub_prob_name == 'gap':
+                sp = _gap_prob(sub_nums, sub_counts, n_draws, sub_min, sub_max, sub_range_size)
+            elif sub_prob_name == 'uniform':
+                sp = np.ones(sub_range_size) / sub_range_size
+            else:
+                sp = sub_decay_prob
+            return _run_strategy(pool, label, sub_probs=sp, n_main=max(n_pool, 12))
+
+        # 间隔异常度概率 (gap_recency)
+        def _gap_prob(num_array, counts, total, mn, mx, size):
+            prob = np.zeros(size)
+            for i, n in enumerate(range(mn, mx + 1)):
+                appearances = [idx for idx, row in enumerate(num_array) if n in row]
+                if appearances:
+                    current_gap = appearances[0]
+                    hist_gaps = []
+                    for j in range(len(appearances) - 1):
+                        hist_gaps.append(appearances[j+1] - appearances[j])
+                    if hist_gaps:
+                        mean_gap = np.mean(hist_gaps)
+                        std_gap = np.std(hist_gaps) + 0.01
+                        z = (current_gap - mean_gap) / std_gap
+                        prob[i] = 1.0 / (1.0 + math.exp(-z * 0.8))
+                    else:
+                        prob[i] = 0.5
+                else:
+                    prob[i] = 0.7
+            return prob / prob.sum()
+
+        main_gap_probs = _gap_prob(main_nums, main_counts, n_draws, main_min, main_max, main_range_size)
+        sub_gap_probs = _gap_prob(sub_nums, sub_counts, n_draws, sub_min, sub_max, sub_range_size)
+
+        # 冷号 + 间隔异常度混合排序
+        main_freq_rank = np.argsort(main_counts)
+        main_cold_ranked = sorted(
+            [(i + main_min, main_counts[i], main_gap_probs[i])
+             for i in range(len(main_counts))],
+            key=lambda x: (x[1], -x[2])  # 频率低优先，同频率间隔异常高的优先
+        )
+
+        # 策略1: ❄️冷号12池（按频率） + 冷号蓝球
+        r1 = _run_cold_strategy(12, 'cold', 101, "❄️冷号轮转A: 最冷12码->旋转矩阵优选")
+        if r1:
+            _update_constraints(r1["main"], r1["sub"])
+
+        # 策略2: ❄️冷号10 + 间隔异常6码混合池 + 间隔异常蓝球
+        pool2 = [num for num, _, _ in main_cold_ranked[:10]]
+        pool2 = [n for n in pool2 if used_main_counts.get(n, 0) < 3]  # 过滤超限号码
+        pool2_set = set(pool2)
+        gap_sorted_all = sorted(
+            [(i + main_min, main_gap_probs[i]) for i in range(len(main_gap_probs))],
             key=lambda x: -x[1]
         )
-        total_nums = len(main_ranked_desc)
-        start = max(1, int(total_nums * 0.2))
-        end = min(total_nums, int(total_nums * 0.7))
-        pool5 = [num for num, _ in main_ranked_desc[start:end]][:14]
-        # 蓝球: 剔除极热极冷, 取中间
-        sub_ranked = sorted([(i, sub_decay_prob[i]) for i in range(len(sub_decay_prob))], key=lambda x: -x[1])
-        sub_mid_start = max(1, int(len(sub_ranked) * 0.2))
-        sub_mid_end = min(len(sub_ranked), int(len(sub_ranked) * 0.8))
+        for num, _ in gap_sorted_all:
+            if num not in pool2_set and len(pool2) < 16 and used_main_counts.get(num, 0) < 3:
+                pool2.append(num)
+                pool2_set.add(num)
+        r2 = _run_strategy(pool2,
+            "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选",
+            sub_probs=sub_gap_probs, n_main=16)
+        if r2:
+            _update_constraints(r2["main"], r2["sub"])
+
+        # 策略3: ❄️间隔异常TOP14 + 间隔异常蓝球
+        cold_half_th = max(1, int(main_range_size * 0.55))
+        cold_half = set(i for i in range(main_range_size) if i in main_freq_rank[:cold_half_th])
+        gap_in_cold = sorted(
+            [(i + main_min, main_gap_probs[i]) for i in cold_half],
+            key=lambda x: -x[1]
+        )
+        pool3 = [num for num, _ in gap_in_cold[:14]]
+        pool3 = [n for n in pool3 if used_main_counts.get(n, 0) < 3]  # 过滤超限号码
+        r3 = _run_strategy(pool3,
+            "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选",
+            sub_probs=sub_gap_probs, n_main=14)
+        if r3:
+            _update_constraints(r3["main"], r3["sub"])
+
+        # 策略4: ❄️冷号8 + 中段8码混合池 + 平衡蓝球
+        pool4 = [num for num, _, _ in main_cold_ranked[:8]]
+        pool4 = [n for n in pool4 if used_main_counts.get(n, 0) < 3]  # 过滤超限号码
+        pool4_set = set(pool4)
+        mid_idx = int(main_range_size * 0.2)
+        mid_end = int(main_range_size * 0.65)
+        main_mid_ranked = sorted(
+            [(i + main_min, main_decay_prob[i]) for i in range(main_range_size)
+             if i >= mid_idx and i <= mid_end],
+            key=lambda x: -x[1]
+        )
+        for num, _ in main_mid_ranked:
+            if num not in pool4_set and len(pool4) < 16 and used_main_counts.get(num, 0) < 3:
+                pool4.append(num)
+                pool4_set.add(num)
         sub_balanced = np.ones(sub_range_size) * 0.1
+        sub_ranked_probs = sorted(
+            [(i, sub_decay_prob[i]) for i in range(sub_range_size)],
+            key=lambda x: -x[1]
+        )
+        sub_mid_start = max(1, int(len(sub_ranked_probs) * 0.2))
+        sub_mid_end = min(len(sub_ranked_probs), int(len(sub_ranked_probs) * 0.8))
         for i in range(sub_mid_start, sub_mid_end):
-            idx = sub_ranked[i][0]
+            idx = sub_ranked_probs[i][0]
             sub_balanced[idx] = 1.0
         sub_balanced = sub_balanced / sub_balanced.sum()
-        r5 = _run_strategy(pool5,
-            f"⚖️平衡轮转: 避开极端冷热,中间{min(14, len(pool5))}码->旋转矩阵优选",
-            sub_probs=sub_balanced, n_main=12)
+        r4 = _run_strategy(pool4,
+            "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选",
+            sub_probs=sub_balanced, n_main=16)
+        if r4:
+            _update_constraints(r4["main"], r4["sub"])
+
+        # 策略5: ❄️冷号12（按频率+遗漏加权）+ 冷号蓝球
+        r5 = _run_cold_strategy(12, 'cold', 505, "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选")
+        if r5:
+            _update_constraints(r5["main"], r5["sub"])
 
         results = [r for r in [r1, r2, r3, r4, r5] if r is not None]
         for i, r in enumerate(results):
             r["index"] = i + 1
 
-        hot = [num for num, _ in main_ranked_desc[:5]]
-        cold = [num for num, _ in main_ranked_asc[:3]]
+        # 更新冷热号展示（冷号=频率最低的，热号=频率最高的）
+
+        hot = [num for num, _, _ in main_cold_ranked[:5]]
+        cold = [num for num, _, _ in main_cold_ranked[-3:]]
 
         return {
             "groups": results[:num_groups],

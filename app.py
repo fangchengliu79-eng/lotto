@@ -85,8 +85,8 @@ def pred_card(rec, matches=None, active=True, cfg=None):
     ht = ""
     reason = rec.get("reason", "")
     strategy_name = reason.split(":")[0] if ":" in reason else "综合推荐"
-    strategy_icons = {"高频热号": "🔥", "近期趋势": "📈", "追冷": "❄️", "马尔可夫": "🔗", "平衡策略": "⚖️"}
-    strategy_colors = {"高频热号": "#dc2626", "近期趋势": "#059669", "追冷": "#2563eb", "马尔可夫": "#7c3aed", "平衡策略": "#d97706"}
+    strategy_icons = {"追冷A": "❄️", "追冷B": "❄️", "追冷C": "❄️", "追冷D": "❄️", "追冷E": "❄️"}
+    strategy_colors = {"追冷A": "#2563eb", "追冷B": "#0891b2", "追冷C": "#4f46e5", "追冷D": "#0284c7", "追冷E": "#475569"}
     icon = strategy_icons.get(strategy_name, "🎯")
     color = strategy_colors.get(strategy_name, "#64748b")
     if gm and gm.get("total_hits", 0) > 0:
@@ -127,8 +127,8 @@ def spiral_card(rec, cfg):
     sc = rec.get("score", 0)
     reason = rec.get("reason", "")
     strategy_name = reason.split(":")[0] if ":" in reason else "螺旋矩阵"
-    colors = {"热号轮转":"#7c3aed","趋势轮转":"#0891b2","冷号轮转":"#2563eb","邻域轮转":"#9333ea","平衡轮转":"#b45309"}
-    icons = {"热号轮转":"🔥","趋势轮转":"📈","冷号轮转":"❄️","邻域轮转":"🔗","平衡轮转":"⚖️"}
+    colors = {"冷号轮转A":"#2563eb","冷号轮转B":"#0891b2","冷号轮转C":"#4f46e5","冷号轮转D":"#0284c7","冷号轮转E":"#475569"}
+    icons = {"冷号轮转A":"❄️","冷号轮转B":"❄️","冷号轮转C":"❄️","冷号轮转D":"❄️","冷号轮转E":"❄️"}
     icon = icons.get(strategy_name, "🌀")
     color = colors.get(strategy_name, "#7c3aed")
     return (f"<div class='glass-card glow' style='padding:1rem;border-top:3px solid {color};background:linear-gradient(135deg,#faf5ff,#f3e8ff);'>"
