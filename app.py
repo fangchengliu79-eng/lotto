@@ -350,50 +350,90 @@ def render_lottery(cfg):
         else:
             st.info("🌀 暂无螺旋矩阵预测")
 
-        # 重新计算按钮
+        # 重新计算按钮（含增量数据刷新）
         st.markdown("<hr>", unsafe_allow_html=True)
         if st.button("🔄 重新计算（统计算法 + 螺旋矩阵）", key=f"recalc_{cfg.short}",
-                      help="用最新数据同时重新评估统计算法和螺旋矩阵"):
-            with st.spinner("正在重新计算两种算法..."):
+                      help="增量刷新最新开奖数据后，重新生成两种算法的预测"):
+            # 第一步：增量数据刷新
+            with st.spinner("正在检查最新开奖数据..."):
+                from data_fetcher import fetch_from_500_html, fetch_ssq_cwl
+                from pathlib import Path
+                csv_path = Path(cfg.history_csv)
+                if csv_path.exists():
+                    local_df = pd.read_csv(csv_path)
+                    local_periods = set(local_df["period"].astype(str).values)
+                    latest_local = int(local_df.iloc[0]["period"])
+                else:
+                    local_df = pd.DataFrame()
+                    local_periods = set()
+                    latest_local = 0
+                try:
+                    if cfg.short == "ssq":
+                        web_df = fetch_ssq_cwl(max_draws=10)
+                    else:
+                        web_df = fetch_from_500_html(cfg, max_draws=10)
+                    if web_df is not None and not web_df.empty:
+                        new_rows = web_df[~web_df["period"].astype(str).isin(local_periods)]
+                        if not new_rows.empty:
+                            merged = pd.concat([web_df, local_df[~local_df["period"].astype(str).isin(web_df["period"].astype(str))]], ignore_index=True)
+                            merged = merged.drop_duplicates(subset=["period"])
+                            merged = merged.sort_values("period", ascending=False).reset_index(drop=True)
+                            merged.to_csv(csv_path, index=False, encoding="utf-8-sig")
+                            fresh_df = merged
+                            st.info(f"📥 新增 {len(new_rows)} 期开奖数据（最新期 {int(web_df.iloc[0]['period'])}）")
+                        else:
+                            fresh_df = local_df
+                            st.info(f"✅ 数据已是最新（最新期 {latest_local}），无需更新")
+                    else:
+                        fresh_df = local_df
+                        st.info(f"⚠️ 网页拉取失败，使用本地数据（最新期 {latest_local}）")
+                except Exception as e:
+                    fresh_df = local_df
+                    st.info(f"⚠️ 网络获取异常: {e}，使用本地数据（最新期 {latest_local}）")
+
+            # 第二步：用最新数据重新生成两种算法
+            with st.spinner("正在使用最新数据重新计算两种算法..."):
                 md = {"f": FrequencyModel(cfg), "p": PoissonModel(cfg),
                       "e": ExponentialSmoothingModel(cfg, alpha=0.3), "m": MonteCarloModel(cfg)}
                 md["m"].n_simulations = 20000
-                mn = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in df.iterrows()])
-                sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
+                mn = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in fresh_df.iterrows()])
+                sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in fresh_df.iterrows()])
                 for m in md.values(): m.fit(mn, sn)
 
-                # 确定期号: 取当前活跃预测的最大期号+1, 或最新数据期号+1
+                # 确定期号: 当前活跃预测的最大期号+1, 或最新数据期号+1
                 all_p_now = get_all_predictions(cfg)
                 active_periods = [int(p["period"]) for p in all_p_now if p["status"] == "active"]
-                latest_data_period = int(df.iloc[0]["period"])
+                latest_data_period = int(fresh_df.iloc[0]["period"])
                 if active_periods:
                     target_p = str(max(active_periods))
+                    # 如果最新数据期号大于活跃期号, 说明开奖已过, 需要更新到下一期
+                    if latest_data_period >= int(target_p):
+                        target_p = str(latest_data_period + 1)
                 else:
                     target_p = str(latest_data_period + 1)
 
-                # 1) 统计算法: 直接覆盖保存
+                # 1) 统计算法
                 ensemble = EnsembleModel(md, cfg)
-                r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=df)
+                r2 = generate_recommendations(ensemble, cfg, num_groups=5, df=fresh_df)
                 new_groups = r2.get("groups", [])
-                # 删除该期号的旧 ensemble 预测
                 all_p = get_all_predictions(cfg)
                 remaining = [p for p in all_p if not (p["period"] == target_p and p.get("algorithm", "ensemble") == "ensemble")]
                 from utils.predictions import _save_all
                 _save_all(remaining, cfg)
                 save_prediction(period=target_p, recommendations=new_groups, cfg=cfg, algorithm="ensemble")
-                st.success("✅ 统计算法已重新生成")
+                st.success("✅ 统计算法已重新生成（最新冷号分析）")
 
-                # 2) 螺旋矩阵: 直接覆盖保存
+                # 2) 螺旋矩阵
                 try:
                     predictor = SpiralMatrixPredictor()
-                    r_sp = predictor.predict(cfg, df, num_groups=5)
+                    r_sp = predictor.predict(cfg, fresh_df, num_groups=5)
                     if r_sp.get("groups"):
                         all_p2 = get_all_predictions(cfg)
                         remaining2 = [p for p in all_p2 if not (p["period"] == target_p and p.get("algorithm") == "spiral_matrix")]
                         from utils.predictions import _save_all
                         _save_all(remaining2, cfg)
                         save_prediction(period=target_p, recommendations=r_sp["groups"], cfg=cfg, algorithm="spiral_matrix")
-                        st.success("🌀 螺旋矩阵已重新生成")
+                        st.success("🌀 螺旋矩阵已重新生成（最新冷号分析）")
                 except Exception as e:
                     st.warning(f"🌀 螺旋矩阵刷新失败: {e}")
                 st.rerun()
