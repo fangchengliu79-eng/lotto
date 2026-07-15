@@ -1,0 +1,99 @@
+{
+  "id": "ensemble_26081_20260715_093131",
+  "algorithm": "ensemble",
+  "period": "26081",
+  "draw_date": "2026-07-16",
+  "created_at": "2026-07-15 09:31:31",
+  "status": "active",
+  "models_used": [
+    "frequency",
+    "poisson",
+    "exponential_smoothing",
+    "monte_carlo"
+  ],
+  "recommendations": [
+    {
+      "group": 1,
+      "main": [
+        4,
+        15,
+        20,
+        21,
+        28,
+        31
+      ],
+      "sub": [
+        14
+      ],
+      "score": 22.8,
+      "reason": "追冷A: 冷号30%+间隔异常75%"
+    },
+    {
+      "group": 2,
+      "main": [
+        4,
+        15,
+        16,
+        21,
+        23,
+        31
+      ],
+      "sub": [
+        2
+      ],
+      "score": 26.4,
+      "reason": "追冷B: 冷号35%+间隔异常65%"
+    },
+    {
+      "group": 3,
+      "main": [
+        5,
+        11,
+        12,
+        16,
+        23,
+        26
+      ],
+      "sub": [
+        14
+      ],
+      "score": 21.2,
+      "reason": "追冷C: 冷号40%+间隔异常80%"
+    },
+    {
+      "group": 4,
+      "main": [
+        7,
+        12,
+        19,
+        26,
+        28,
+        29
+      ],
+      "sub": [
+        2
+      ],
+      "score": 24.7,
+      "reason": "追冷D: 冷号50%+间隔异常70%"
+    },
+    {
+      "group": 5,
+      "main": [
+        11,
+        14,
+        19,
+        20,
+        29,
+        32
+      ],
+      "sub": [
+        1
+      ],
+      "score": 22.8,
+      "reason": "追冷E: 冷号55%+间隔异常60%"
+    }
+  ],
+  "actual_draw": null,
+  "matches": null,
+  "summary": null
+}

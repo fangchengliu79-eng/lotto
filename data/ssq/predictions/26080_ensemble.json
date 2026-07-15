@@ -4,7 +4,7 @@
   "period": "26080",
   "draw_date": "2026-07-14",
   "created_at": "2026-07-14 09:39:50",
-  "status": "active",
+  "status": "completed",
   "models_used": [
     "frequency",
     "poisson",
@@ -93,7 +93,91 @@
       "reason": "追冷E: 冷号55%+间隔异常60%"
     }
   ],
-  "actual_draw": null,
-  "matches": null,
-  "summary": null
+  "actual_draw": {
+    "main": [
+      4,
+      5,
+      11,
+      19,
+      27,
+      32
+    ],
+    "sub": [
+      1
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [
+        4
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 2,
+      "main_matches": [
+        4
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 3,
+      "main_matches": [
+        5
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        19
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        5,
+        11,
+        19,
+        27,
+        32
+      ],
+      "sub_matches": [],
+      "main_hits": 5,
+      "sub_hits": 0,
+      "total_hits": 5
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      4,
+      5,
+      11,
+      19,
+      27,
+      32
+    ],
+    "actual_sub": [
+      1
+    ],
+    "best_group": 5,
+    "best_hits": 5,
+    "avg_main_hits": 1.8,
+    "avg_sub_hits": 0.0,
+    "avg_total_hits": 1.8
+  }
 }

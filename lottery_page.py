@@ -273,24 +273,95 @@ def render_page(cfg):
             latest_period = str(df.iloc[0]["period"])
             has_pred = any(p["period"] == latest_period and p["status"] in ("active", "completed") for p in get_all_predictions(cfg))
             if has_pred: st.info(f"✅ 期 {latest_period} 已有预测记录")
-            if st.button("📅 生成下一期预测", type="primary", use_container_width=True):
-                next_period = str(int(df.iloc[0]["period"]) + 1)
-                existing = [p for p in get_all_predictions(cfg) if p["period"] == next_period]
-                if existing: st.warning(f"期 {next_period} 已有预测")
-                else:
-                    with st.spinner("正在生成新预测..."):
-                        md = {"frequency": FrequencyModel(cfg), "poisson": PoissonModel(cfg),
-                              "exponential_smoothing": ExponentialSmoothingModel(cfg, alpha=0.3),
-                              "monte_carlo": MonteCarloModel(cfg)}
-                        md["monte_carlo"].n_simulations = 20000
-                        mn = np.array([sorted([int(r[c]) for c in cfg.main_cols]) for _, r in df.iterrows()])
-                        sn = np.array([sorted([int(r[c]) for c in cfg.sub_cols]) for _, r in df.iterrows()])
-                        for m in md.values(): m.fit(mn, sn)
-                        ensemble = EnsembleModel(md, cfg)
-                        r2 = generate_recommendations(ensemble, cfg, num_groups=num_groups)
-                        recs_new = r2.get("groups", [])
-                        save_prediction(period=next_period, recommendations=recs_new, cfg=cfg)
-                        st.rerun()
+            if st.button("📅 生成下一期预测（自动刷新数据）", type="primary", use_container_width=True):
+                # 第一步：增量更新 — 只补充缺少的最新开奖期，不重拉全部
+                with st.spinner("正在检查最新开奖数据..."):
+                    from data_fetcher import update_data, fetch_from_500_html, fetch_ssq_cwl
+                    import pandas as pd
+                    from pathlib import Path
+                    # 先读本地CSV
+                    csv_path = Path(cfg.history_csv)
+                    if csv_path.exists():
+                        local_df = pd.read_csv(csv_path)
+                        local_periods = set(local_df["period"].astype(str).values)
+                        latest_local = int(local_df.iloc[0]["period"])
+                    else:
+                        local_df = pd.DataFrame()
+                        local_periods = set()
+                        latest_local = 0
+                    # 从网页拉最新数据（完整列表，但只取新期）
+                    try:
+                        if cfg.short == "ssq":
+                            web_df = fetch_ssq_cwl(max_draws=10)  # 只拉最近10期
+                        else:
+                            web_df = fetch_from_500_html(cfg, max_draws=10)
+                        if web_df is not None and not web_df.empty:
+                            new_rows = web_df[~web_df["period"].astype(str).isin(local_periods)]
+                            if not new_rows.empty:
+                                merged = pd.concat([web_df, local_df[~local_df["period"].astype(str).isin(web_df["period"].astype(str))]], ignore_index=True)
+                                merged = merged.drop_duplicates(subset=["period"])
+                                merged = merged.sort_values("period", ascending=False).reset_index(drop=True)
+                                merged.to_csv(csv_path, index=False, encoding="utf-8-sig")
+                                fresh_df = merged
+                                st.info(f"📥 新增 {len(new_rows)} 期开奖数据（最新期 {int(web_df.iloc[0]['period'])}）")
+                            else:
+                                fresh_df = local_df
+                                st.info(f"✅ 数据已是最新（最新期 {latest_local}），无需更新")
+                        else:
+                            fresh_df = local_df
+                            st.info(f"⚠️ 网页拉取失败，使用本地数据（最新期 {latest_local}）")
+                    except Exception as e:
+                        fresh_df = local_df
+                        st.info(f"⚠️ 网络获取异常: {e}，使用本地数据（最新期 {latest_local}）")
+                if fresh_df is not None and not fresh_df.empty:
+                    next_period = str(int(fresh_df.iloc[0]["period"]) + 1)
+                    existing_all = get_all_predictions(cfg)
+                    existing = [p for p in existing_all if p["period"] == next_period]
+                    if existing:
+                        st.warning(f"期 {next_period} 已有预测记录")
+                    else:
+                        # 第二步：用最新数据生成统计算法预测
+                        with st.spinner(f"正在基于最新{len(fresh_df)}期数据生成 {next_period} 追冷预测..."):
+                            # 提取号码数组（最新数据）
+                            fresh_mn = np.array([
+                                sorted([int(r[c]) for c in cfg.main_cols])
+                                for _, r in fresh_df.iterrows()
+                            ])
+                            fresh_sn = np.array([
+                                sorted([int(r[c]) for c in cfg.sub_cols])
+                                for _, r in fresh_df.iterrows()
+                            ])
+                            # 统计算法
+                            md = {"frequency": FrequencyModel(cfg), "poisson": PoissonModel(cfg),
+                                  "exponential_smoothing": ExponentialSmoothingModel(cfg, alpha=0.3),
+                                  "monte_carlo": MonteCarloModel(cfg)}
+                            md["monte_carlo"].n_simulations = 20000
+                            for m in md.values(): m.fit(fresh_mn, fresh_sn)
+                            ensemble = EnsembleModel(md, cfg)
+                            r2 = generate_recommendations(ensemble, cfg, num_groups=num_groups, df=fresh_df)
+                            recs_new = r2.get("groups", [])
+                            save_prediction(period=next_period, recommendations=recs_new, cfg=cfg, algorithm="ensemble")
+                            # 螺旋矩阵算法
+                            try:
+                                from models.spiral_matrix import SpiralMatrixPredictor
+                                sp = SpiralMatrixPredictor()
+                                sr = sp.predict(cfg, fresh_df, num_groups=num_groups)
+                                sr_groups = sr.get("groups", [])
+                                # 转换为统一格式
+                                spiral_recs = []
+                                for g in sr_groups:
+                                    spiral_recs.append({
+                                        "main": g["main"],
+                                        "sub": g["sub"],
+                                        "score": g.get("score", 0),
+                                        "reason": g.get("reason", "螺旋矩阵追冷轮转"),
+                                    })
+                                save_prediction(period=next_period, recommendations=spiral_recs, cfg=cfg, algorithm="spiral_matrix")
+                            except Exception as e:
+                                import logging
+                                logging.warning(f"螺旋矩阵生成失败（不影响预测）: {e}")
+                            st.success(f"✅ 期 {next_period} 统计算法+螺旋矩阵预测生成完成，基于最新 {len(fresh_df)} 期数据")
+                            st.rerun()
 
     # ═══════ 数据分析 ═══════
     elif page == "📊 数据分析":
