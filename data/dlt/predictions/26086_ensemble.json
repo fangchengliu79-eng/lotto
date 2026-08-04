@@ -1,0 +1,173 @@
+{
+  "id": "ensemble_26086_20260730_092217",
+  "algorithm": "ensemble",
+  "period": "26086",
+  "draw_date": "2026-08-01",
+  "created_at": "2026-07-30 09:22:17",
+  "status": "completed",
+  "models_used": [
+    "frequency",
+    "poisson",
+    "exponential_smoothing",
+    "monte_carlo"
+  ],
+  "recommendations": [
+    {
+      "group": 1,
+      "main": [
+        7,
+        17,
+        24,
+        25,
+        31
+      ],
+      "sub": [
+        3,
+        6
+      ],
+      "score": 27.5,
+      "reason": "追冷A: 冷号30%+间隔异常75%"
+    },
+    {
+      "group": 2,
+      "main": [
+        7,
+        17,
+        20,
+        24,
+        25
+      ],
+      "sub": [
+        3,
+        11
+      ],
+      "score": 30.2,
+      "reason": "追冷B: 冷号35%+间隔异常65%"
+    },
+    {
+      "group": 3,
+      "main": [
+        1,
+        19,
+        20,
+        28,
+        29
+      ],
+      "sub": [
+        6,
+        11
+      ],
+      "score": 31.9,
+      "reason": "追冷C: 冷号40%+间隔异常80%"
+    },
+    {
+      "group": 4,
+      "main": [
+        6,
+        19,
+        27,
+        28,
+        31
+      ],
+      "sub": [
+        7,
+        10
+      ],
+      "score": 31.9,
+      "reason": "追冷D: 冷号50%+间隔异常70%"
+    },
+    {
+      "group": 5,
+      "main": [
+        6,
+        14,
+        23,
+        27,
+        30
+      ],
+      "sub": [
+        7,
+        10
+      ],
+      "score": 31.0,
+      "reason": "追冷E: 冷号55%+间隔异常60%"
+    }
+  ],
+  "actual_draw": {
+    "main": [
+      10,
+      11,
+      18,
+      22,
+      35
+    ],
+    "sub": [
+      6,
+      12
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [],
+      "sub_matches": [
+        6
+      ],
+      "main_hits": 0,
+      "sub_hits": 1,
+      "total_hits": 1
+    },
+    {
+      "group": 2,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 3,
+      "main_matches": [],
+      "sub_matches": [
+        6
+      ],
+      "main_hits": 0,
+      "sub_hits": 1,
+      "total_hits": 1
+    },
+    {
+      "group": 4,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 5,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      10,
+      11,
+      18,
+      22,
+      35
+    ],
+    "actual_sub": [
+      6,
+      12
+    ],
+    "best_group": 1,
+    "best_hits": 1,
+    "avg_main_hits": 0.0,
+    "avg_sub_hits": 0.4,
+    "avg_total_hits": 0.4
+  }
+}

@@ -25,6 +25,56 @@ import numpy as np
 import pandas as pd
 
 from utils.helpers import validate_numbers, get_logger
+from utils.predictions import get_all_predictions
+
+
+# ========================================================================
+# 历史预测记忆（仅大乐透统计算法使用）
+# 统计最近 N 期 ensemble 预测中每个号码/号码对的推荐次数，
+# 用于对"反复推荐的号码"施加惩罚，实现跨期轮换，避免死守一组冷号。
+# ========================================================================
+def _load_prediction_history_counts(cfg, max_records: int = 10):
+    """统计最近 max_records 期 ensemble 预测的号码/号码对推荐次数。
+
+    Returns:
+        (main_counts, sub_counts, main_pairs, sub_pairs)
+        main_counts: {号码: 推荐次数}
+        main_pairs:  {frozenset({a,b}): 同时推荐次数}
+    """
+    main_counts = {}
+    sub_counts = {}
+    main_pairs = {}
+    sub_pairs = {}
+    try:
+        preds = get_all_predictions(cfg)
+    except Exception:
+        preds = []
+    # 只取 ensemble 算法（旧记录无 algorithm 字段视为 ensemble）
+    ens = [p for p in preds
+           if p.get("algorithm", "ensemble") == "ensemble"
+           and p.get("status") in ("active", "completed")]
+    ens.sort(key=lambda p: str(p.get("period", "")), reverse=True)
+    ens = ens[:max_records]
+    for p in ens:
+        for g in p.get("recommendations", []):
+            m = g.get("main", [])
+            s = g.get("sub", [])
+            for n in m:
+                main_counts[n] = main_counts.get(n, 0) + 1
+            for n in s:
+                sub_counts[n] = sub_counts.get(n, 0) + 1
+            sm = sorted(m)
+            for i in range(len(sm)):
+                for j in range(i + 1, len(sm)):
+                    pr = frozenset((sm[i], sm[j]))
+                    main_pairs[pr] = main_pairs.get(pr, 0) + 1
+            ss = sorted(s)
+            for i in range(len(ss)):
+                for j in range(i + 1, len(ss)):
+                    pr = frozenset((ss[i], ss[j]))
+                    sub_pairs[pr] = sub_pairs.get(pr, 0) + 1
+    return main_counts, sub_counts, main_pairs, sub_pairs
+
 
 
 class EnsembleModel:
@@ -583,6 +633,16 @@ def generate_recommendations(
     dlt_cold_filter = (lambda v: _check_dlt_zone(v, cold_mode=True)) if is_dlt else None
     dlt_candidates = 1200 if is_dlt else 500  # DLT需要更多候选以找到符合区间分布的
 
+    # 历史预测记忆（仅大乐透）：统计最近10期 ensemble 推荐中号码/号码对的出现次数，
+    # 对反复推荐的号码施加惩罚 → 跨期轮换，避免死守同一组冷号。
+    hist_main_counts = {}
+    hist_sub_counts = {}
+    hist_main_pairs = {}
+    hist_sub_pairs = {}
+    if is_dlt:
+        hist_main_counts, hist_sub_counts, hist_main_pairs, hist_sub_pairs = \
+            _load_prediction_history_counts(cfg, max_records=10)
+
     def _run_strategy(strategy_probs_m, strategy_probs_s, rng_seed, n_candidates=500, pattern_filter=None):
         """Run one strategy: generate candidates, score with CRF, pick best.
         
@@ -771,6 +831,55 @@ def generate_recommendations(
                             sub_pair_penalty.add(idx)
             for idx in sub_pair_penalty:
                 s_strat[idx] *= (0.10 * penalty_level)
+
+            # ── 历史预测记忆惩罚（仅大乐透）：反复推荐的号码跨期轮换 ──
+            # 参考"已经给出过的记录"：近10期被推荐越多的号码，本期概率压得越低，
+            # 冷号池自动轮换到下一批冷号，避免死守 07/17 这类号码。
+            if is_dlt and hist_main_counts:
+                for num, cnt in hist_main_counts.items():
+                    idx = num - cfg.main_min
+                    if 0 <= idx < main_n:
+                        if cnt >= 4:
+                            m_strat[idx] *= 0.02   # 近10期推荐≥4次：几乎禁用
+                        elif cnt >= 3:
+                            m_strat[idx] *= 0.10   # ≥3次：大幅压低
+                        elif cnt >= 2:
+                            m_strat[idx] *= 0.35   # ≥2次：明显压低
+                        else:
+                            m_strat[idx] *= 0.85   # 1次：轻微降温
+                for pair, pcnt in hist_main_pairs.items():
+                    if pcnt >= 3:
+                        for n in pair:
+                            idx = n - cfg.main_min
+                            if 0 <= idx < main_n:
+                                m_strat[idx] *= 0.20
+                    elif pcnt == 2:
+                        for n in pair:
+                            idx = n - cfg.main_min
+                            if 0 <= idx < main_n:
+                                m_strat[idx] *= 0.50
+                for num, cnt in hist_sub_counts.items():
+                    idx = num - cfg.sub_min
+                    if 0 <= idx < sub_n:
+                        if cnt >= 4:
+                            s_strat[idx] *= 0.02
+                        elif cnt >= 3:
+                            s_strat[idx] *= 0.10
+                        elif cnt >= 2:
+                            s_strat[idx] *= 0.35
+                        else:
+                            s_strat[idx] *= 0.85
+                for pair, pcnt in hist_sub_pairs.items():
+                    if pcnt >= 3:
+                        for n in pair:
+                            idx = n - cfg.sub_min
+                            if 0 <= idx < sub_n:
+                                s_strat[idx] *= 0.20
+                    elif pcnt == 2:
+                        for n in pair:
+                            idx = n - cfg.sub_min
+                            if 0 <= idx < sub_n:
+                                s_strat[idx] *= 0.50
 
             m_strat = np.maximum(m_strat, 1e-10)
             m_strat = m_strat / m_strat.sum()

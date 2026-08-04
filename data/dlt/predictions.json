@@ -1,11 +1,3077 @@
 [
   {
-    "id": "ensemble_26079_20260715_095228",
+    "id": "spiral_matrix_26088_20260804_101427",
+    "algorithm": "spiral_matrix",
+    "period": "26088",
+    "draw_date": "2026-08-05",
+    "created_at": "2026-08-04 10:14:27",
+    "status": "active",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          17,
+          19,
+          20,
+          32
+        ],
+        "sub": [
+          7,
+          9
+        ],
+        "score": 33.6,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          1,
+          12,
+          17,
+          19,
+          32
+        ],
+        "sub": [
+          8,
+          9
+        ],
+        "score": 27.9,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          6,
+          17,
+          19,
+          20,
+          27
+        ],
+        "sub": [
+          8,
+          12
+        ],
+        "score": 27.1,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          7,
+          10,
+          13,
+          15,
+          25
+        ],
+        "sub": [
+          1,
+          2
+        ],
+        "score": 42.4,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          13,
+          20,
+          26,
+          30
+        ],
+        "sub": [
+          1,
+          6
+        ],
+        "score": 34.4,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      }
+    ],
+    "actual_draw": null,
+    "matches": null,
+    "summary": null
+  },
+  {
+    "id": "ensemble_26088_20260804_140158",
+    "algorithm": "ensemble",
+    "period": "26088",
+    "draw_date": "2026-08-05",
+    "created_at": "2026-08-04 14:01:58",
+    "status": "active",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          2,
+          11,
+          12,
+          22,
+          26
+        ],
+        "sub": [
+          1,
+          8
+        ],
+        "score": 35.5,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          9,
+          13,
+          22,
+          26,
+          32
+        ],
+        "sub": [
+          1,
+          8
+        ],
+        "score": 36.0,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          9,
+          12,
+          13,
+          15,
+          32
+        ],
+        "sub": [
+          2,
+          5
+        ],
+        "score": 35.4,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          2,
+          10,
+          11,
+          15,
+          35
+        ],
+        "sub": [
+          2,
+          5
+        ],
+        "score": 31.7,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          8,
+          18,
+          26,
+          29,
+          35
+        ],
+        "sub": [
+          1,
+          4
+        ],
+        "score": 31.8,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": null,
+    "matches": null,
+    "summary": null
+  },
+  {
+    "id": "ensemble_26087_20260803_175441",
+    "algorithm": "ensemble",
+    "period": "26087",
+    "draw_date": "2026-08-03",
+    "created_at": "2026-08-03 17:54:41",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          17,
+          19,
+          24,
+          25
+        ],
+        "sub": [
+          3,
+          6
+        ],
+        "score": 28.6,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          17,
+          24,
+          25,
+          35
+        ],
+        "sub": [
+          3,
+          11
+        ],
+        "score": 30.6,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          1,
+          20,
+          24,
+          28,
+          33
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 30.5,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          19,
+          20,
+          27,
+          28
+        ],
+        "sub": [
+          7,
+          10
+        ],
+        "score": 30.5,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          6,
+          16,
+          23,
+          27,
+          31
+        ],
+        "sub": [
+          7,
+          10
+        ],
+        "score": 29.8,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        5,
+        10,
+        16,
+        24,
+        27
+      ],
+      "sub": [
+        4,
+        10
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          24
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          24
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          24
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          27
+        ],
+        "sub_matches": [
+          10
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          16,
+          27
+        ],
+        "sub_matches": [
+          10
+        ],
+        "main_hits": 2,
+        "sub_hits": 1,
+        "total_hits": 3
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        5,
+        10,
+        16,
+        24,
+        27
+      ],
+      "actual_sub": [
+        4,
+        10
+      ],
+      "best_group": 5,
+      "best_hits": 3,
+      "avg_main_hits": 1.2,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.6
+    }
+  },
+  {
+    "id": "spiral_matrix_26087_20260803_175441",
+    "algorithm": "spiral_matrix",
+    "period": "26087",
+    "draw_date": "2026-08-03",
+    "created_at": "2026-08-03 17:54:41",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          1,
+          17,
+          19,
+          20,
+          24
+        ],
+        "sub": [
+          9,
+          11
+        ],
+        "score": 35.5,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          9,
+          12,
+          17,
+          19,
+          24
+        ],
+        "sub": [
+          1,
+          10
+        ],
+        "score": 38.7,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          5,
+          16,
+          19,
+          20,
+          27
+        ],
+        "sub": [
+          7,
+          8
+        ],
+        "score": 28.2,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          10,
+          12,
+          13,
+          30
+        ],
+        "sub": [
+          2,
+          4
+        ],
+        "score": 42.1,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          17,
+          20,
+          26,
+          30
+        ],
+        "sub": [
+          3,
+          6
+        ],
+        "score": 44.5,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐1码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        5,
+        10,
+        16,
+        24,
+        27
+      ],
+      "sub": [
+        4,
+        10
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          24
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          24
+        ],
+        "sub_matches": [
+          10
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          5,
+          16,
+          27
+        ],
+        "sub_matches": [],
+        "main_hits": 3,
+        "sub_hits": 0,
+        "total_hits": 3
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          10
+        ],
+        "sub_matches": [
+          4
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          5
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        5,
+        10,
+        16,
+        24,
+        27
+      ],
+      "actual_sub": [
+        4,
+        10
+      ],
+      "best_group": 3,
+      "best_hits": 3,
+      "avg_main_hits": 1.4,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.8
+    }
+  },
+  {
+    "id": "ensemble_26086_20260730_092217",
+    "algorithm": "ensemble",
+    "period": "26086",
+    "draw_date": "2026-08-01",
+    "created_at": "2026-07-30 09:22:17",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          17,
+          24,
+          25,
+          31
+        ],
+        "sub": [
+          3,
+          6
+        ],
+        "score": 27.5,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          17,
+          20,
+          24,
+          25
+        ],
+        "sub": [
+          3,
+          11
+        ],
+        "score": 30.2,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          1,
+          19,
+          20,
+          28,
+          29
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 31.9,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          6,
+          19,
+          27,
+          28,
+          31
+        ],
+        "sub": [
+          7,
+          10
+        ],
+        "score": 31.9,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          6,
+          14,
+          23,
+          27,
+          30
+        ],
+        "sub": [
+          7,
+          10
+        ],
+        "score": 31.0,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        10,
+        11,
+        18,
+        22,
+        35
+      ],
+      "sub": [
+        6,
+        12
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [
+          6
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [],
+        "sub_matches": [
+          6
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      },
+      {
+        "group": 4,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 5,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        10,
+        11,
+        18,
+        22,
+        35
+      ],
+      "actual_sub": [
+        6,
+        12
+      ],
+      "best_group": 1,
+      "best_hits": 1,
+      "avg_main_hits": 0.0,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 0.4
+    }
+  },
+  {
+    "id": "spiral_matrix_26086_20260730_092217",
+    "algorithm": "spiral_matrix",
+    "period": "26086",
+    "draw_date": "2026-08-01",
+    "created_at": "2026-07-30 09:22:17",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          5,
+          17,
+          19,
+          20,
+          24
+        ],
+        "sub": [
+          1,
+          3
+        ],
+        "score": 38.2,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          9,
+          12,
+          17,
+          19,
+          32
+        ],
+        "sub": [
+          1,
+          2
+        ],
+        "score": 33.8,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          6,
+          17,
+          19,
+          20,
+          28
+        ],
+        "sub": [
+          2,
+          4
+        ],
+        "score": 26.2,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          13,
+          16,
+          18,
+          30
+        ],
+        "sub": [
+          1,
+          11
+        ],
+        "score": 42.1,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          13,
+          20,
+          26,
+          30
+        ],
+        "sub": [
+          6,
+          10
+        ],
+        "score": 36.9,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        10,
+        11,
+        18,
+        22,
+        35
+      ],
+      "sub": [
+        6,
+        12
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          18
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 5,
+        "main_matches": [],
+        "sub_matches": [
+          6
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        10,
+        11,
+        18,
+        22,
+        35
+      ],
+      "actual_sub": [
+        6,
+        12
+      ],
+      "best_group": 4,
+      "best_hits": 1,
+      "avg_main_hits": 0.2,
+      "avg_sub_hits": 0.2,
+      "avg_total_hits": 0.4
+    }
+  },
+  {
+    "id": "ensemble_26085_20260728_181138",
+    "algorithm": "ensemble",
+    "period": "26085",
+    "draw_date": "2026-07-29",
+    "created_at": "2026-07-28 18:11:38",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          1,
+          17,
+          24,
+          25,
+          30
+        ],
+        "sub": [
+          3,
+          6
+        ],
+        "score": 27.4,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          19,
+          20,
+          24,
+          25
+        ],
+        "sub": [
+          3,
+          11
+        ],
+        "score": 30.7,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          7,
+          20,
+          21,
+          28,
+          32
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 31.1,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          6,
+          17,
+          27,
+          28,
+          33
+        ],
+        "sub": [
+          7,
+          10
+        ],
+        "score": 30.5,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          1,
+          14,
+          23,
+          27,
+          33
+        ],
+        "sub": [
+          7,
+          10
+        ],
+        "score": 29.5,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        3,
+        4,
+        14,
+        28,
+        31
+      ],
+      "sub": [
+        5,
+        7
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          28
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          28
+        ],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          14
+        ],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        3,
+        4,
+        14,
+        28,
+        31
+      ],
+      "actual_sub": [
+        5,
+        7
+      ],
+      "best_group": 4,
+      "best_hits": 2,
+      "avg_main_hits": 0.6,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.0
+    }
+  },
+  {
+    "id": "spiral_matrix_26085_20260728_181138",
+    "algorithm": "spiral_matrix",
+    "period": "26085",
+    "draw_date": "2026-07-29",
+    "created_at": "2026-07-28 18:11:38",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          1,
+          17,
+          19,
+          20,
+          24
+        ],
+        "sub": [
+          1,
+          9
+        ],
+        "score": 32.7,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          9,
+          12,
+          17,
+          19,
+          32
+        ],
+        "sub": [
+          11,
+          12
+        ],
+        "score": 27.6,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          6,
+          17,
+          19,
+          20,
+          30
+        ],
+        "sub": [
+          1,
+          8
+        ],
+        "score": 32.7,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          12,
+          13,
+          15,
+          24
+        ],
+        "sub": [
+          5,
+          10
+        ],
+        "score": 42.7,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          13,
+          20,
+          26,
+          30
+        ],
+        "sub": [
+          3,
+          7
+        ],
+        "score": 47.4,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        3,
+        4,
+        14,
+        28,
+        31
+      ],
+      "sub": [
+        5,
+        7
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 4,
+        "main_matches": [],
+        "sub_matches": [
+          5
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      },
+      {
+        "group": 5,
+        "main_matches": [],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        3,
+        4,
+        14,
+        28,
+        31
+      ],
+      "actual_sub": [
+        5,
+        7
+      ],
+      "best_group": 4,
+      "best_hits": 1,
+      "avg_main_hits": 0.0,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 0.4
+    }
+  },
+  {
+    "id": "ensemble_26084_20260727_093048",
+    "algorithm": "ensemble",
+    "period": "26084",
+    "draw_date": "2026-07-27",
+    "created_at": "2026-07-27 09:30:48",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          17,
+          24,
+          25,
+          31
+        ],
+        "sub": [
+          3,
+          9
+        ],
+        "score": 26.7,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          17,
+          19,
+          24,
+          25
+        ],
+        "sub": [
+          3,
+          7
+        ],
+        "score": 29.0,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          5,
+          20,
+          26,
+          28,
+          31
+        ],
+        "sub": [
+          6,
+          7
+        ],
+        "score": 27.6,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          19,
+          20,
+          23,
+          28
+        ],
+        "sub": [
+          10,
+          11
+        ],
+        "score": 32.7,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          6,
+          14,
+          23,
+          27,
+          33
+        ],
+        "sub": [
+          10,
+          11
+        ],
+        "score": 33.4,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        13,
+        25,
+        30,
+        32,
+        33
+      ],
+      "sub": [
+        4,
+        5
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          25
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          25
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 3,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 4,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          33
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        13,
+        25,
+        30,
+        32,
+        33
+      ],
+      "actual_sub": [
+        4,
+        5
+      ],
+      "best_group": 1,
+      "best_hits": 1,
+      "avg_main_hits": 0.6,
+      "avg_sub_hits": 0.0,
+      "avg_total_hits": 0.6
+    }
+  },
+  {
+    "id": "spiral_matrix_26084_20260727_093048",
+    "algorithm": "spiral_matrix",
+    "period": "26084",
+    "draw_date": "2026-07-27",
+    "created_at": "2026-07-27 09:30:48",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          1,
+          16,
+          17,
+          19,
+          24
+        ],
+        "sub": [
+          4,
+          9
+        ],
+        "score": 33.7,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          3,
+          12,
+          17,
+          19,
+          30
+        ],
+        "sub": [
+          1,
+          11
+        ],
+        "score": 33.9,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          6,
+          14,
+          17,
+          19,
+          32
+        ],
+        "sub": [
+          2,
+          3
+        ],
+        "score": 29.7,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          7,
+          10,
+          13,
+          15,
+          35
+        ],
+        "sub": [
+          1,
+          4
+        ],
+        "score": 42.0,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          13,
+          16,
+          26,
+          30
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 38.5,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        13,
+        25,
+        30,
+        32,
+        33
+      ],
+      "sub": [
+        4,
+        5
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [
+          4
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          30
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          32
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          13
+        ],
+        "sub_matches": [
+          4
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          13,
+          30
+        ],
+        "sub_matches": [],
+        "main_hits": 2,
+        "sub_hits": 0,
+        "total_hits": 2
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        13,
+        25,
+        30,
+        32,
+        33
+      ],
+      "actual_sub": [
+        4,
+        5
+      ],
+      "best_group": 4,
+      "best_hits": 2,
+      "avg_main_hits": 1.0,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.4
+    }
+  },
+  {
+    "id": "ensemble_26083_20260723_093132",
+    "algorithm": "ensemble",
+    "period": "26083",
+    "draw_date": "2026-07-25",
+    "created_at": "2026-07-23 09:31:32",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          17,
+          24,
+          29,
+          31
+        ],
+        "sub": [
+          3,
+          6
+        ],
+        "score": 29.2,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          20,
+          24,
+          25,
+          30
+        ],
+        "sub": [
+          3,
+          6
+        ],
+        "score": 28.4,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          1,
+          17,
+          20,
+          25,
+          28
+        ],
+        "sub": [
+          7,
+          9
+        ],
+        "score": 26.8,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          19,
+          23,
+          28,
+          30
+        ],
+        "sub": [
+          10,
+          11
+        ],
+        "score": 32.6,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          14,
+          23,
+          27,
+          33
+        ],
+        "sub": [
+          10,
+          11
+        ],
+        "score": 32.5,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        14,
+        15,
+        16,
+        23,
+        26
+      ],
+      "sub": [
+        7,
+        9
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [],
+        "sub_matches": [
+          7,
+          9
+        ],
+        "main_hits": 0,
+        "sub_hits": 2,
+        "total_hits": 2
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          23
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          14,
+          23
+        ],
+        "sub_matches": [],
+        "main_hits": 2,
+        "sub_hits": 0,
+        "total_hits": 2
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        14,
+        15,
+        16,
+        23,
+        26
+      ],
+      "actual_sub": [
+        7,
+        9
+      ],
+      "best_group": 3,
+      "best_hits": 2,
+      "avg_main_hits": 0.6,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.0
+    }
+  },
+  {
+    "id": "spiral_matrix_26083_20260723_093132",
+    "algorithm": "spiral_matrix",
+    "period": "26083",
+    "draw_date": "2026-07-25",
+    "created_at": "2026-07-23 09:31:32",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          5,
+          16,
+          17,
+          19,
+          24
+        ],
+        "sub": [
+          6,
+          12
+        ],
+        "score": 31.7,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          3,
+          12,
+          17,
+          19,
+          24
+        ],
+        "sub": [
+          3,
+          7
+        ],
+        "score": 30.7,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          5,
+          14,
+          17,
+          19,
+          27
+        ],
+        "sub": [
+          2,
+          3
+        ],
+        "score": 33.4,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          7,
+          10,
+          13,
+          15,
+          25
+        ],
+        "sub": [
+          5,
+          10
+        ],
+        "score": 42.4,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          13,
+          16,
+          26,
+          30
+        ],
+        "sub": [
+          2,
+          7
+        ],
+        "score": 28.4,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        14,
+        15,
+        16,
+        23,
+        26
+      ],
+      "sub": [
+        7,
+        9
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          16
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          14
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          15
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          16,
+          26
+        ],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 2,
+        "sub_hits": 1,
+        "total_hits": 3
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        14,
+        15,
+        16,
+        23,
+        26
+      ],
+      "actual_sub": [
+        7,
+        9
+      ],
+      "best_group": 5,
+      "best_hits": 3,
+      "avg_main_hits": 1.0,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.4
+    }
+  },
+  {
+    "id": "ensemble_26082_20260721_105631",
+    "algorithm": "ensemble",
+    "period": "26082",
+    "draw_date": "2026-07-22",
+    "created_at": "2026-07-21 10:56:31",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          16,
+          24,
+          25,
+          31
+        ],
+        "sub": [
+          3,
+          9
+        ],
+        "score": 27.9,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          17,
+          24,
+          25,
+          35
+        ],
+        "sub": [
+          9,
+          11
+        ],
+        "score": 29.7,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          1,
+          16,
+          22,
+          28,
+          34
+        ],
+        "sub": [
+          3,
+          6
+        ],
+        "score": 30.0,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          1,
+          17,
+          27,
+          28,
+          34
+        ],
+        "sub": [
+          11,
+          12
+        ],
+        "score": 31.2,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          6,
+          20,
+          23,
+          27,
+          31
+        ],
+        "sub": [
+          6,
+          7
+        ],
+        "score": 27.5,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        16,
+        26,
+        27,
+        28,
+        34
+      ],
+      "sub": [
+        2,
+        6
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          16
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          16,
+          28,
+          34
+        ],
+        "sub_matches": [
+          6
+        ],
+        "main_hits": 3,
+        "sub_hits": 1,
+        "total_hits": 4
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          27,
+          28,
+          34
+        ],
+        "sub_matches": [],
+        "main_hits": 3,
+        "sub_hits": 0,
+        "total_hits": 3
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          27
+        ],
+        "sub_matches": [
+          6
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        16,
+        26,
+        27,
+        28,
+        34
+      ],
+      "actual_sub": [
+        2,
+        6
+      ],
+      "best_group": 3,
+      "best_hits": 4,
+      "avg_main_hits": 1.6,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 2.0
+    }
+  },
+  {
+    "id": "spiral_matrix_26082_20260721_105631",
+    "algorithm": "spiral_matrix",
+    "period": "26082",
+    "draw_date": "2026-07-22",
+    "created_at": "2026-07-21 10:56:31",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          5,
+          16,
+          17,
+          19,
+          24
+        ],
+        "sub": [
+          1,
+          6
+        ],
+        "score": 28.3,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          9,
+          12,
+          16,
+          17,
+          30
+        ],
+        "sub": [
+          4,
+          9
+        ],
+        "score": 32.5,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          7,
+          16,
+          19,
+          20,
+          27
+        ],
+        "sub": [
+          3,
+          12
+        ],
+        "score": 29.1,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          7,
+          10,
+          13,
+          15,
+          24
+        ],
+        "sub": [
+          5,
+          7
+        ],
+        "score": 42.6,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          5,
+          17,
+          19,
+          24,
+          30
+        ],
+        "sub": [
+          11,
+          12
+        ],
+        "score": 30.3,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐1码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        16,
+        26,
+        27,
+        28,
+        34
+      ],
+      "sub": [
+        2,
+        6
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          16
+        ],
+        "sub_matches": [
+          6
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          16
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          16,
+          27
+        ],
+        "sub_matches": [],
+        "main_hits": 2,
+        "sub_hits": 0,
+        "total_hits": 2
+      },
+      {
+        "group": 4,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 5,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        16,
+        26,
+        27,
+        28,
+        34
+      ],
+      "actual_sub": [
+        2,
+        6
+      ],
+      "best_group": 1,
+      "best_hits": 2,
+      "avg_main_hits": 0.8,
+      "avg_sub_hits": 0.2,
+      "avg_total_hits": 1.0
+    }
+  },
+  {
+    "id": "ensemble_26081_20260720_095231",
+    "algorithm": "ensemble",
+    "period": "26081",
+    "draw_date": "2026-07-20",
+    "created_at": "2026-07-20 09:52:31",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          16,
+          24,
+          25,
+          31
+        ],
+        "sub": [
+          3,
+          9
+        ],
+        "score": 27.5,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          17,
+          19,
+          24,
+          25
+        ],
+        "sub": [
+          9,
+          11
+        ],
+        "score": 29.0,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          1,
+          17,
+          23,
+          27,
+          34
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 29.5,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          5,
+          20,
+          23,
+          27,
+          34
+        ],
+        "sub": [
+          7,
+          12
+        ],
+        "score": 29.2,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          6,
+          19,
+          21,
+          28,
+          30
+        ],
+        "sub": [
+          7,
+          12
+        ],
+        "score": 29.5,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        8,
+        16,
+        18,
+        24,
+        34
+      ],
+      "sub": [
+        9,
+        12
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          16,
+          24
+        ],
+        "sub_matches": [
+          9
+        ],
+        "main_hits": 2,
+        "sub_hits": 1,
+        "total_hits": 3
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          24
+        ],
+        "sub_matches": [
+          9
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          34
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          34
+        ],
+        "sub_matches": [
+          12
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 5,
+        "main_matches": [],
+        "sub_matches": [
+          12
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        8,
+        16,
+        18,
+        24,
+        34
+      ],
+      "actual_sub": [
+        9,
+        12
+      ],
+      "best_group": 1,
+      "best_hits": 3,
+      "avg_main_hits": 1.0,
+      "avg_sub_hits": 0.8,
+      "avg_total_hits": 1.8
+    }
+  },
+  {
+    "id": "spiral_matrix_26081_20260720_095231",
+    "algorithm": "spiral_matrix",
+    "period": "26081",
+    "draw_date": "2026-07-20",
+    "created_at": "2026-07-20 09:52:31",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          5,
+          16,
+          17,
+          19,
+          30
+        ],
+        "sub": [
+          4,
+          9
+        ],
+        "score": 33.7,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          9,
+          12,
+          16,
+          17,
+          30
+        ],
+        "sub": [
+          2,
+          6
+        ],
+        "score": 29.1,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          7,
+          16,
+          19,
+          20,
+          28
+        ],
+        "sub": [
+          5,
+          9
+        ],
+        "score": 29.5,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          7,
+          10,
+          12,
+          13,
+          30
+        ],
+        "sub": [
+          1,
+          5
+        ],
+        "score": 42.3,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          7,
+          17,
+          19,
+          24,
+          26
+        ],
+        "sub": [
+          3,
+          11
+        ],
+        "score": 45.6,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        8,
+        16,
+        18,
+        24,
+        34
+      ],
+      "sub": [
+        9,
+        12
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          16
+        ],
+        "sub_matches": [
+          9
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          16
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          16
+        ],
+        "sub_matches": [
+          9
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      },
+      {
+        "group": 4,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          24
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        8,
+        16,
+        18,
+        24,
+        34
+      ],
+      "actual_sub": [
+        9,
+        12
+      ],
+      "best_group": 1,
+      "best_hits": 2,
+      "avg_main_hits": 0.8,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.2
+    }
+  },
+  {
+    "id": "ensemble_26080_20260716_143035",
+    "algorithm": "ensemble",
+    "period": "26080",
+    "draw_date": "2026-07-18",
+    "created_at": "2026-07-16 14:30:35",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          7,
+          16,
+          24,
+          25,
+          31
+        ],
+        "sub": [
+          3,
+          9
+        ],
+        "score": 27.5,
+        "reason": "追冷A: 冷号30%+间隔异常75%"
+      },
+      {
+        "group": 2,
+        "main": [
+          7,
+          17,
+          19,
+          24,
+          25
+        ],
+        "sub": [
+          9,
+          11
+        ],
+        "score": 29.0,
+        "reason": "追冷B: 冷号35%+间隔异常65%"
+      },
+      {
+        "group": 3,
+        "main": [
+          1,
+          17,
+          23,
+          27,
+          34
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 29.5,
+        "reason": "追冷C: 冷号40%+间隔异常80%"
+      },
+      {
+        "group": 4,
+        "main": [
+          5,
+          20,
+          23,
+          27,
+          34
+        ],
+        "sub": [
+          7,
+          12
+        ],
+        "score": 29.2,
+        "reason": "追冷D: 冷号50%+间隔异常70%"
+      },
+      {
+        "group": 5,
+        "main": [
+          6,
+          19,
+          21,
+          28,
+          30
+        ],
+        "sub": [
+          7,
+          12
+        ],
+        "score": 29.5,
+        "reason": "追冷E: 冷号55%+间隔异常60%"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        5,
+        10,
+        15,
+        21,
+        23
+      ],
+      "sub": [
+        7,
+        8
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          23
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          5,
+          23
+        ],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 2,
+        "sub_hits": 1,
+        "total_hits": 3
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          21
+        ],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        5,
+        10,
+        15,
+        21,
+        23
+      ],
+      "actual_sub": [
+        7,
+        8
+      ],
+      "best_group": 4,
+      "best_hits": 3,
+      "avg_main_hits": 0.8,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.2
+    }
+  },
+  {
+    "id": "spiral_matrix_26080_20260716_143035",
+    "algorithm": "spiral_matrix",
+    "period": "26080",
+    "draw_date": "2026-07-18",
+    "created_at": "2026-07-16 14:30:35",
+    "status": "completed",
+    "models_used": [
+      "frequency",
+      "poisson",
+      "exponential_smoothing",
+      "monte_carlo"
+    ],
+    "recommendations": [
+      {
+        "group": 1,
+        "main": [
+          5,
+          16,
+          17,
+          19,
+          30
+        ],
+        "sub": [
+          3,
+          9
+        ],
+        "score": 49.0,
+        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      },
+      {
+        "group": 2,
+        "main": [
+          9,
+          12,
+          16,
+          17,
+          30
+        ],
+        "sub": [
+          6,
+          11
+        ],
+        "score": 27.7,
+        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      },
+      {
+        "group": 3,
+        "main": [
+          7,
+          16,
+          19,
+          20,
+          28
+        ],
+        "sub": [
+          2,
+          3
+        ],
+        "score": 32.4,
+        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      },
+      {
+        "group": 4,
+        "main": [
+          7,
+          10,
+          12,
+          13,
+          30
+        ],
+        "sub": [
+          4,
+          10
+        ],
+        "score": 42.3,
+        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      },
+      {
+        "group": 5,
+        "main": [
+          7,
+          17,
+          19,
+          24,
+          26
+        ],
+        "sub": [
+          7,
+          9
+        ],
+        "score": 39.8,
+        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      }
+    ],
+    "actual_draw": {
+      "main": [
+        5,
+        10,
+        15,
+        21,
+        23
+      ],
+      "sub": [
+        7,
+        8
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [
+          5
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 2,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 3,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          10
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 5,
+        "main_matches": [],
+        "sub_matches": [
+          7
+        ],
+        "main_hits": 0,
+        "sub_hits": 1,
+        "total_hits": 1
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        5,
+        10,
+        15,
+        21,
+        23
+      ],
+      "actual_sub": [
+        7,
+        8
+      ],
+      "best_group": 1,
+      "best_hits": 1,
+      "avg_main_hits": 0.4,
+      "avg_sub_hits": 0.2,
+      "avg_total_hits": 0.6
+    }
+  },
+  {
+    "id": "ensemble_26079_20260715_095626",
     "algorithm": "ensemble",
     "period": "26079",
     "draw_date": "2026-07-15",
-    "created_at": "2026-07-15 09:52:28",
-    "status": "active",
+    "created_at": "2026-07-15 09:56:26",
+    "status": "completed",
     "models_used": [
       "frequency",
       "poisson",
@@ -94,17 +3160,102 @@
         "reason": "追冷E: 冷号55%+间隔异常60%"
       }
     ],
-    "actual_draw": null,
-    "matches": null,
-    "summary": null
+    "actual_draw": {
+      "main": [
+        6,
+        8,
+        23,
+        26,
+        27
+      ],
+      "sub": [
+        5,
+        12
+      ]
+    },
+    "matches": [
+      {
+        "group": 1,
+        "main_matches": [],
+        "sub_matches": [],
+        "main_hits": 0,
+        "sub_hits": 0,
+        "total_hits": 0
+      },
+      {
+        "group": 2,
+        "main_matches": [
+          23
+        ],
+        "sub_matches": [],
+        "main_hits": 1,
+        "sub_hits": 0,
+        "total_hits": 1
+      },
+      {
+        "group": 3,
+        "main_matches": [
+          6,
+          23
+        ],
+        "sub_matches": [],
+        "main_hits": 2,
+        "sub_hits": 0,
+        "total_hits": 2
+      },
+      {
+        "group": 4,
+        "main_matches": [
+          6,
+          26,
+          27
+        ],
+        "sub_matches": [
+          12
+        ],
+        "main_hits": 3,
+        "sub_hits": 1,
+        "total_hits": 4
+      },
+      {
+        "group": 5,
+        "main_matches": [
+          27
+        ],
+        "sub_matches": [
+          12
+        ],
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
+      }
+    ],
+    "summary": {
+      "actual_main": [
+        6,
+        8,
+        23,
+        26,
+        27
+      ],
+      "actual_sub": [
+        5,
+        12
+      ],
+      "best_group": 4,
+      "best_hits": 4,
+      "avg_main_hits": 1.4,
+      "avg_sub_hits": 0.4,
+      "avg_total_hits": 1.8
+    }
   },
   {
-    "id": "spiral_matrix_26079_20260715_095228",
+    "id": "spiral_matrix_26079_20260715_095626",
     "algorithm": "spiral_matrix",
     "period": "26079",
     "draw_date": "2026-07-15",
-    "created_at": "2026-07-15 09:52:28",
-    "status": "active",
+    "created_at": "2026-07-15 09:56:26",
+    "status": "completed",
     "models_used": [
       "frequency",
       "poisson",
@@ -122,10 +3273,10 @@
           32
         ],
         "sub": [
-          3,
-          9
+          6,
+          12
         ],
-        "score": 51.4,
+        "score": 32.9,
         "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
       },
       {
@@ -139,9 +3290,9 @@
         ],
         "sub": [
           3,
-          10
+          6
         ],
-        "score": 27.8,
+        "score": 26.9,
         "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
       },
       {
@@ -154,10 +3305,10 @@
           27
         ],
         "sub": [
-          3,
-          9
+          5,
+          10
         ],
-        "score": 30.0,
+        "score": 36.5,
         "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
       },
       {
@@ -170,8 +3321,8 @@
           24
         ],
         "sub": [
-          5,
-          10
+          1,
+          12
         ],
         "score": 42.9,
         "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
@@ -187,122 +3338,23 @@
         ],
         "sub": [
           3,
-          4
+          11
         ],
-        "score": 43.4,
+        "score": 48.8,
         "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
       }
     ],
-    "actual_draw": null,
-    "matches": null,
-    "summary": null
-  },
-  {
-    "id": "ensemble_26078_20260713_181937",
-    "algorithm": "ensemble",
-    "period": "26078",
-    "draw_date": "2026-07-13",
-    "created_at": "2026-07-13 18:19:37",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          7,
-          17,
-          23,
-          24,
-          31
-        ],
-        "sub": [
-          3,
-          11
-        ],
-        "score": 27.9,
-        "reason": "追冷A: 冷号35%+间隔异常75%"
-      },
-      {
-        "group": 2,
-        "main": [
-          7,
-          17,
-          24,
-          25,
-          32
-        ],
-        "sub": [
-          3,
-          11
-        ],
-        "score": 27.7,
-        "reason": "追冷B: 冷号30%+间隔异常70%"
-      },
-      {
-        "group": 3,
-        "main": [
-          7,
-          17,
-          20,
-          23,
-          24
-        ],
-        "sub": [
-          9,
-          11
-        ],
-        "score": 27.9,
-        "reason": "追冷C: 冷号40%+间隔异常70%"
-      },
-      {
-        "group": 4,
-        "main": [
-          7,
-          17,
-          24,
-          25,
-          34
-        ],
-        "sub": [
-          3,
-          11
-        ],
-        "score": 28.5,
-        "reason": "追冷D: 冷号45%+间隔异常80%"
-      },
-      {
-        "group": 5,
-        "main": [
-          1,
-          20,
-          23,
-          27,
-          34
-        ],
-        "sub": [
-          9,
-          12
-        ],
-        "score": 29.1,
-        "reason": "追冷E: 冷号50%+间隔异常65%"
-      }
-    ],
     "actual_draw": {
       "main": [
-        2,
-        13,
-        20,
-        25,
-        32
+        6,
+        8,
+        23,
+        26,
+        27
       ],
       "sub": [
-        8,
-        11
+        5,
+        12
       ]
     },
     "matches": [
@@ -310,7 +3362,7 @@
         "group": 1,
         "main_matches": [],
         "sub_matches": [
-          11
+          12
         ],
         "main_hits": 0,
         "sub_hits": 1,
@@ -319,406 +3371,40 @@
       {
         "group": 2,
         "main_matches": [
-          25,
-          32
-        ],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 2,
-        "sub_hits": 1,
-        "total_hits": 3
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          20
-        ],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 4,
-        "main_matches": [
-          25
-        ],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          20
+          8
         ],
         "sub_matches": [],
         "main_hits": 1,
         "sub_hits": 0,
         "total_hits": 1
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        2,
-        13,
-        20,
-        25,
-        32
-      ],
-      "actual_sub": [
-        8,
-        11
-      ],
-      "best_group": 2,
-      "best_hits": 3,
-      "avg_main_hits": 1.0,
-      "avg_sub_hits": 0.8,
-      "avg_total_hits": 1.8
-    }
-  },
-  {
-    "id": "spiral_matrix_26078_20260713_181937",
-    "algorithm": "spiral_matrix",
-    "period": "26078",
-    "draw_date": "2026-07-13",
-    "created_at": "2026-07-13 18:19:37",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
+      },
       {
-        "group": 1,
-        "main": [
-          7,
-          16,
-          17,
-          19,
-          31
+        "group": 3,
+        "main_matches": [
+          27
         ],
-        "sub": [
-          3,
+        "sub_matches": [
           5
         ],
-        "score": 33.2,
-        "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          8,
-          17,
-          19,
-          24,
-          30
-        ],
-        "sub": [
-          1,
-          8
-        ],
-        "score": 35.2,
-        "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
-      },
-      {
-        "group": 3,
-        "main": [
-          5,
-          16,
-          17,
-          20,
-          33
-        ],
-        "sub": [
-          1,
-          4
-        ],
-        "score": 27.7,
-        "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+        "main_hits": 1,
+        "sub_hits": 1,
+        "total_hits": 2
       },
       {
         "group": 4,
-        "main": [
-          7,
-          10,
-          12,
-          15,
-          24
-        ],
-        "sub": [
-          4,
-          8
-        ],
-        "score": 41.3,
-        "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
-      },
-      {
-        "group": 5,
-        "main": [
-          1,
-          14,
-          16,
-          19,
-          24
-        ],
-        "sub": [
-          6,
+        "main_matches": [],
+        "sub_matches": [
           12
         ],
-        "score": 33.9,
-        "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        2,
-        13,
-        20,
-        25,
-        32
-      ],
-      "sub": [
-        8,
-        11
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [
-          8
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          20
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [
-          8
-        ],
         "main_hits": 0,
         "sub_hits": 1,
         "total_hits": 1
       },
       {
         "group": 5,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        2,
-        13,
-        20,
-        25,
-        32
-      ],
-      "actual_sub": [
-        8,
-        11
-      ],
-      "best_group": 2,
-      "best_hits": 1,
-      "avg_main_hits": 0.2,
-      "avg_sub_hits": 0.4,
-      "avg_total_hits": 0.6
-    }
-  },
-  {
-    "id": "ensemble_26077_20260709_145432",
-    "algorithm": "ensemble",
-    "period": "26077",
-    "draw_date": "2026-07-11",
-    "created_at": "2026-07-09 14:54:32",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          8,
-          11,
-          13,
-          14,
-          25
-        ],
-        "sub": [
-          7,
-          8
-        ],
-        "score": 36.7,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          6,
-          10,
-          12,
-          13,
-          27
-        ],
-        "sub": [
-          7,
-          8
-        ],
-        "score": 36.1,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          7,
-          17,
-          24,
-          27,
-          30
-        ],
-        "sub": [
-          6,
-          11
-        ],
-        "score": 30.7,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          6,
-          13,
-          14,
-          17,
+        "main_matches": [
           26
         ],
-        "sub": [
-          4,
-          10
-        ],
-        "score": 28.0,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          1,
-          15,
-          19,
-          20,
-          28
-        ],
-        "sub": [
-          8,
-          10
-        ],
-        "score": 32.2,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        4,
-        14,
-        19,
-        24,
-        27
-      ],
-      "sub": [
-        6,
-        7
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          14
-        ],
-        "sub_matches": [
-          7
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          27
-        ],
-        "sub_matches": [
-          7
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          24,
-          27
-        ],
-        "sub_matches": [
-          6
-        ],
-        "main_hits": 2,
-        "sub_hits": 1,
-        "total_hits": 3
-      },
-      {
-        "group": 4,
-        "main_matches": [
-          14
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          19
-        ],
         "sub_matches": [],
         "main_hits": 1,
         "sub_hits": 0,
@@ -727,2681 +3413,20 @@
     ],
     "summary": {
       "actual_main": [
-        4,
-        14,
-        19,
-        24,
+        6,
+        8,
+        23,
+        26,
         27
       ],
       "actual_sub": [
-        6,
-        7
+        5,
+        12
       ],
       "best_group": 3,
-      "best_hits": 3,
-      "avg_main_hits": 1.2,
-      "avg_sub_hits": 0.6,
-      "avg_total_hits": 1.8
-    }
-  },
-  {
-    "id": "spiral_matrix_26077_20260709_145432",
-    "algorithm": "spiral_matrix",
-    "period": "26077",
-    "draw_date": "2026-07-11",
-    "created_at": "2026-07-09 14:54:32",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          6,
-          10,
-          12,
-          13,
-          26
-        ],
-        "sub": [
-          1,
-          12
-        ],
-        "score": 38.3,
-        "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-5)优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          1,
-          3,
-          6,
-          14,
-          16
-        ],
-        "sub": [
-          3,
-          6
-        ],
-        "score": 24.9,
-        "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
-      },
-      {
-        "group": 3,
-        "main": [
-          5,
-          16,
-          17,
-          19,
-          30
-        ],
-        "sub": [
-          3,
-          11
-        ],
-        "score": 44.6,
-        "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
-      },
-      {
-        "group": 4,
-        "main": [
-          6,
-          13,
-          15,
-          18,
-          26
-        ],
-        "sub": [
-          3,
-          9
-        ],
-        "score": 32.6,
-        "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
-      },
-      {
-        "group": 5,
-        "main": [
-          9,
-          15,
-          18,
-          19,
-          28
-        ],
-        "sub": [
-          8,
-          10
-        ],
-        "score": 41.1,
-        "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        4,
-        14,
-        19,
-        24,
-        27
-      ],
-      "sub": [
-        6,
-        7
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          14
-        ],
-        "sub_matches": [
-          6
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          19
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          19
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        4,
-        14,
-        19,
-        24,
-        27
-      ],
-      "actual_sub": [
-        6,
-        7
-      ],
-      "best_group": 2,
       "best_hits": 2,
-      "avg_main_hits": 0.6,
-      "avg_sub_hits": 0.2,
-      "avg_total_hits": 0.8
-    }
-  },
-  {
-    "id": "ensemble_26076_20260707_182916",
-    "algorithm": "ensemble",
-    "period": "26076",
-    "draw_date": "2026-07-08",
-    "created_at": "2026-07-07 18:29:16",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          9,
-          10,
-          12,
-          15,
-          26
-        ],
-        "sub": [
-          4,
-          5
-        ],
-        "score": 35.2,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          6,
-          10,
-          12,
-          13,
-          27
-        ],
-        "sub": [
-          7,
-          8
-        ],
-        "score": 35.7,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          7,
-          17,
-          24,
-          27,
-          30
-        ],
-        "sub": [
-          6,
-          11
-        ],
-        "score": 29.5,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          3,
-          11,
-          12,
-          15,
-          26
-        ],
-        "sub": [
-          1,
-          5
-        ],
-        "score": 33.6,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          1,
-          15,
-          18,
-          20,
-          28
-        ],
-        "sub": [
-          8,
-          10
-        ],
-        "score": 33.9,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        15,
-        20,
-        27,
-        28,
-        35
-      ],
-      "sub": [
-        2,
-        11
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          15
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          27
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          27
-        ],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 4,
-        "main_matches": [
-          15
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          15,
-          20,
-          28
-        ],
-        "sub_matches": [],
-        "main_hits": 3,
-        "sub_hits": 0,
-        "total_hits": 3
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        15,
-        20,
-        27,
-        28,
-        35
-      ],
-      "actual_sub": [
-        2,
-        11
-      ],
-      "best_group": 5,
-      "best_hits": 3,
-      "avg_main_hits": 1.4,
-      "avg_sub_hits": 0.2,
-      "avg_total_hits": 1.6
-    }
-  },
-  {
-    "id": "spiral_matrix_26076_20260707_182916",
-    "algorithm": "spiral_matrix",
-    "period": "26076",
-    "draw_date": "2026-07-08",
-    "created_at": "2026-07-07 18:29:16",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          4,
-          10,
-          12,
-          13,
-          26
-        ],
-        "sub": [
-          1,
-          2
-        ],
-        "score": 39.3,
-        "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-5)优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          3,
-          5,
-          10,
-          12,
-          21
-        ],
-        "sub": [
-          3,
-          11
-        ],
-        "score": 32.2,
-        "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
-      },
-      {
-        "group": 3,
-        "main": [
-          5,
-          16,
-          17,
-          19,
-          30
-        ],
-        "sub": [
-          3,
-          6
-        ],
-        "score": 44.5,
-        "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
-      },
-      {
-        "group": 4,
-        "main": [
-          1,
-          10,
-          11,
-          13,
-          26
-        ],
-        "sub": [
-          1,
-          11
-        ],
-        "score": 47.5,
-        "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
-      },
-      {
-        "group": 5,
-        "main": [
-          3,
-          15,
-          18,
-          20,
-          28
-        ],
-        "sub": [
-          3,
-          7
-        ],
-        "score": 29.2,
-        "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        15,
-        20,
-        27,
-        28,
-        35
-      ],
-      "sub": [
-        2,
-        11
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [],
-        "sub_matches": [
-          2
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          15,
-          20,
-          28
-        ],
-        "sub_matches": [],
-        "main_hits": 3,
-        "sub_hits": 0,
-        "total_hits": 3
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        15,
-        20,
-        27,
-        28,
-        35
-      ],
-      "actual_sub": [
-        2,
-        11
-      ],
-      "best_group": 5,
-      "best_hits": 3,
       "avg_main_hits": 0.6,
       "avg_sub_hits": 0.6,
-      "avg_total_hits": 1.2
-    }
-  },
-  {
-    "id": "ensemble_26075_20260706_133730",
-    "algorithm": "ensemble",
-    "period": "26075",
-    "draw_date": "2026-07-06",
-    "created_at": "2026-07-06 13:37:30",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          9,
-          11,
-          12,
-          15,
-          26
-        ],
-        "sub": [
-          4,
-          5
-        ],
-        "score": 35.4,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          6,
-          10,
-          12,
-          13,
-          27
-        ],
-        "sub": [
-          7,
-          8
-        ],
-        "score": 35.1,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          7,
-          17,
-          24,
-          27,
-          30
-        ],
-        "sub": [
-          6,
-          11
-        ],
-        "score": 28.8,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          5,
-          12,
-          14,
-          17,
-          33
-        ],
-        "sub": [
-          1,
-          2
-        ],
-        "score": 32.3,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          4,
-          15,
-          19,
-          20,
-          28
-        ],
-        "sub": [
-          7,
-          11
-        ],
-        "score": 31.0,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        1,
-        6,
-        16,
-        18,
-        26
-      ],
-      "sub": [
-        4,
-        10
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          26
-        ],
-        "sub_matches": [
-          4
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          6
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        1,
-        6,
-        16,
-        18,
-        26
-      ],
-      "actual_sub": [
-        4,
-        10
-      ],
-      "best_group": 1,
-      "best_hits": 2,
-      "avg_main_hits": 0.4,
-      "avg_sub_hits": 0.2,
-      "avg_total_hits": 0.6
-    }
-  },
-  {
-    "id": "spiral_matrix_26075_20260706_133730",
-    "algorithm": "spiral_matrix",
-    "period": "26075",
-    "draw_date": "2026-07-06",
-    "created_at": "2026-07-06 13:37:30",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          3,
-          10,
-          13,
-          15,
-          26
-        ],
-        "sub": [
-          5,
-          11
-        ],
-        "score": 37.4,
-        "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-5)优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          5,
-          10,
-          11,
-          12,
-          21
-        ],
-        "sub": [
-          10,
-          11
-        ],
-        "score": 34.9,
-        "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
-      },
-      {
-        "group": 3,
-        "main": [
-          7,
-          16,
-          17,
-          19,
-          30
-        ],
-        "sub": [
-          7,
-          9
-        ],
-        "score": 35.9,
-        "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
-      },
-      {
-        "group": 4,
-        "main": [
-          4,
-          10,
-          11,
-          13,
-          33
-        ],
-        "sub": [
-          2,
-          12
-        ],
-        "score": 60.7,
-        "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
-      },
-      {
-        "group": 5,
-        "main": [
-          4,
-          15,
-          18,
-          20,
-          33
-        ],
-        "sub": [
-          1,
-          4
-        ],
-        "score": 41.4,
-        "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        1,
-        6,
-        16,
-        18,
-        26
-      ],
-      "sub": [
-        4,
-        10
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          26
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [
-          10
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          16
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          18
-        ],
-        "sub_matches": [
-          4
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        1,
-        6,
-        16,
-        18,
-        26
-      ],
-      "actual_sub": [
-        4,
-        10
-      ],
-      "best_group": 5,
-      "best_hits": 2,
-      "avg_main_hits": 0.6,
-      "avg_sub_hits": 0.4,
-      "avg_total_hits": 1.0
-    }
-  },
-  {
-    "id": "ensemble_26074_20260703_143846",
-    "algorithm": "ensemble",
-    "period": "26074",
-    "draw_date": "2026-07-04",
-    "created_at": "2026-07-03 14:38:46",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          9,
-          11,
-          12,
-          15,
-          26
-        ],
-        "sub": [
-          4,
-          5
-        ],
-        "score": 34.2,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          6,
-          10,
-          12,
-          13,
-          27
-        ],
-        "sub": [
-          7,
-          8
-        ],
-        "score": 35.2,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          7,
-          23,
-          25,
-          27,
-          35
-        ],
-        "sub": [
-          6,
-          11
-        ],
-        "score": 29.1,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          3,
-          10,
-          11,
-          14,
-          29
-        ],
-        "sub": [
-          8,
-          11
-        ],
-        "score": 32.7,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          5,
-          10,
-          11,
-          14,
-          28
-        ],
-        "sub": [
-          7,
-          10
-        ],
-        "score": 32.2,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        1,
-        4,
-        10,
-        23,
-        25
-      ],
-      "sub": [
-        1,
-        12
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          10
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          23,
-          25
-        ],
-        "sub_matches": [],
-        "main_hits": 2,
-        "sub_hits": 0,
-        "total_hits": 2
-      },
-      {
-        "group": 4,
-        "main_matches": [
-          10
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          10
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        1,
-        4,
-        10,
-        23,
-        25
-      ],
-      "actual_sub": [
-        1,
-        12
-      ],
-      "best_group": 3,
-      "best_hits": 2,
-      "avg_main_hits": 1.0,
-      "avg_sub_hits": 0.0,
-      "avg_total_hits": 1.0
-    }
-  },
-  {
-    "id": "spiral_matrix_26074_20260703_143846",
-    "algorithm": "spiral_matrix",
-    "period": "26074",
-    "draw_date": "2026-07-04",
-    "created_at": "2026-07-03 14:38:46",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          6,
-          13,
-          15,
-          18,
-          26
-        ],
-        "sub": [
-          2,
-          9
-        ],
-        "score": 33.9,
-        "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-5)优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          3,
-          11,
-          13,
-          15,
-          26
-        ],
-        "sub": [
-          1,
-          6
-        ],
-        "score": 34.4,
-        "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
-      },
-      {
-        "group": 3,
-        "main": [
-          7,
-          16,
-          17,
-          19,
-          24
-        ],
-        "sub": [
-          6,
-          9
-        ],
-        "score": 38.9,
-        "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
-      },
-      {
-        "group": 4,
-        "main": [
-          2,
-          12,
-          13,
-          14,
-          26
-        ],
-        "sub": [
-          5,
-          8
-        ],
-        "score": 30.1,
-        "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
-      },
-      {
-        "group": 5,
-        "main": [
-          9,
-          15,
-          18,
-          20,
-          28
-        ],
-        "sub": [
-          10,
-          11
-        ],
-        "score": 41.4,
-        "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        1,
-        4,
-        10,
-        23,
-        25
-      ],
-      "sub": [
-        1,
-        12
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [
-          1
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        1,
-        4,
-        10,
-        23,
-        25
-      ],
-      "actual_sub": [
-        1,
-        12
-      ],
-      "best_group": 2,
-      "best_hits": 1,
-      "avg_main_hits": 0.0,
-      "avg_sub_hits": 0.2,
-      "avg_total_hits": 0.2
-    }
-  },
-  {
-    "id": "ensemble_26073_20260630_091851",
-    "algorithm": "ensemble",
-    "period": "26073",
-    "draw_date": "2026-07-01",
-    "created_at": "2026-06-30 09:18:51",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          9,
-          10,
-          12,
-          15,
-          26
-        ],
-        "sub": [
-          4,
-          5
-        ],
-        "score": 33.8,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          9,
-          11,
-          13,
-          14,
-          32
-        ],
-        "sub": [
-          8,
-          11
-        ],
-        "score": 32.4,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          1,
-          16,
-          23,
-          25,
-          27
-        ],
-        "sub": [
-          9,
-          11
-        ],
-        "score": 29.4,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          3,
-          12,
-          15,
-          16,
-          34
-        ],
-        "sub": [
-          2,
-          5
-        ],
-        "score": 31.1,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          2,
-          15,
-          18,
-          19,
-          28
-        ],
-        "sub": [
-          10,
-          11
-        ],
-        "score": 29.6,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        4,
-        10,
-        22,
-        23,
-        33
-      ],
-      "sub": [
-        2,
-        12
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          10
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          23
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [
-          2
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 5,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        4,
-        10,
-        22,
-        23,
-        33
-      ],
-      "actual_sub": [
-        2,
-        12
-      ],
-      "best_group": 1,
-      "best_hits": 1,
-      "avg_main_hits": 0.4,
-      "avg_sub_hits": 0.2,
-      "avg_total_hits": 0.6
-    }
-  },
-  {
-    "id": "spiral_matrix_26073_20260630_091851",
-    "algorithm": "spiral_matrix",
-    "period": "26073",
-    "draw_date": "2026-07-01",
-    "created_at": "2026-06-30 09:18:51",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          3,
-          13,
-          15,
-          18,
-          26
-        ],
-        "sub": [
-          9,
-          11
-        ],
-        "score": 31.8,
-        "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-5)优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          3,
-          12,
-          13,
-          15,
-          21
-        ],
-        "sub": [
-          1,
-          12
-        ],
-        "score": 37.1,
-        "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
-      },
-      {
-        "group": 3,
-        "main": [
-          5,
-          16,
-          17,
-          19,
-          24
-        ],
-        "sub": [
-          8,
-          10
-        ],
-        "score": 22.0,
-        "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
-      },
-      {
-        "group": 4,
-        "main": [
-          5,
-          12,
-          13,
-          14,
-          26
-        ],
-        "sub": [
-          6,
-          9
-        ],
-        "score": 26.0,
-        "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
-      },
-      {
-        "group": 5,
-        "main": [
-          6,
-          15,
-          19,
-          20,
-          28
-        ],
-        "sub": [
-          1,
-          11
-        ],
-        "score": 41.5,
-        "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        4,
-        10,
-        22,
-        23,
-        33
-      ],
-      "sub": [
-        2,
-        12
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [
-          12
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        4,
-        10,
-        22,
-        23,
-        33
-      ],
-      "actual_sub": [
-        2,
-        12
-      ],
-      "best_group": 2,
-      "best_hits": 1,
-      "avg_main_hits": 0.0,
-      "avg_sub_hits": 0.2,
-      "avg_total_hits": 0.2
-    }
-  },
-  {
-    "id": "ensemble_26072_20260629_164752",
-    "algorithm": "ensemble",
-    "period": "26072",
-    "draw_date": "2026-06-29",
-    "created_at": "2026-06-29 16:47:52",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          9,
-          10,
-          12,
-          15,
-          26
-        ],
-        "sub": [
-          4,
-          5
-        ],
-        "score": 33.8,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          9,
-          11,
-          13,
-          14,
-          32
-        ],
-        "sub": [
-          8,
-          11
-        ],
-        "score": 32.4,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          1,
-          16,
-          23,
-          25,
-          27
-        ],
-        "sub": [
-          9,
-          11
-        ],
-        "score": 29.4,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          3,
-          12,
-          15,
-          16,
-          34
-        ],
-        "sub": [
-          2,
-          5
-        ],
-        "score": 31.1,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          2,
-          15,
-          18,
-          19,
-          28
-        ],
-        "sub": [
-          10,
-          11
-        ],
-        "score": 29.6,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        1,
-        13,
-        26,
-        29,
-        30
-      ],
-      "sub": [
-        9,
-        11
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          26
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          13
-        ],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          1
-        ],
-        "sub_matches": [
-          9,
-          11
-        ],
-        "main_hits": 1,
-        "sub_hits": 2,
-        "total_hits": 3
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        1,
-        13,
-        26,
-        29,
-        30
-      ],
-      "actual_sub": [
-        9,
-        11
-      ],
-      "best_group": 3,
-      "best_hits": 3,
-      "avg_main_hits": 0.6,
-      "avg_sub_hits": 0.8,
-      "avg_total_hits": 1.4
-    }
-  },
-  {
-    "id": "spiral_matrix_26072_20260629_164752",
-    "algorithm": "spiral_matrix",
-    "period": "26072",
-    "draw_date": "2026-06-29",
-    "created_at": "2026-06-29 16:47:52",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          3,
-          13,
-          15,
-          18,
-          26
-        ],
-        "sub": [
-          4,
-          12
-        ],
-        "score": 35.3,
-        "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-5)优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          3,
-          12,
-          13,
-          15,
-          21
-        ],
-        "sub": [
-          6,
-          10
-        ],
-        "score": 35.3,
-        "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
-      },
-      {
-        "group": 3,
-        "main": [
-          5,
-          16,
-          17,
-          19,
-          24
-        ],
-        "sub": [
-          6,
-          11
-        ],
-        "score": 37.4,
-        "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
-      },
-      {
-        "group": 4,
-        "main": [
-          5,
-          12,
-          13,
-          14,
-          26
-        ],
-        "sub": [
-          2,
-          3
-        ],
-        "score": 73.0,
-        "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
-      },
-      {
-        "group": 5,
-        "main": [
-          6,
-          15,
-          19,
-          20,
-          28
-        ],
-        "sub": [
-          4,
-          11
-        ],
-        "score": 41.5,
-        "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        1,
-        13,
-        26,
-        29,
-        30
-      ],
-      "sub": [
-        9,
-        11
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          13,
-          26
-        ],
-        "sub_matches": [],
-        "main_hits": 2,
-        "sub_hits": 0,
-        "total_hits": 2
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          13
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 4,
-        "main_matches": [
-          13,
-          26
-        ],
-        "sub_matches": [],
-        "main_hits": 2,
-        "sub_hits": 0,
-        "total_hits": 2
-      },
-      {
-        "group": 5,
-        "main_matches": [],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        1,
-        13,
-        26,
-        29,
-        30
-      ],
-      "actual_sub": [
-        9,
-        11
-      ],
-      "best_group": 1,
-      "best_hits": 2,
-      "avg_main_hits": 1.0,
-      "avg_sub_hits": 0.4,
-      "avg_total_hits": 1.4
-    }
-  },
-  {
-    "id": "pred_26070_20260623_094453",
-    "period": "26070",
-    "draw_date": "2026-06-24",
-    "created_at": "2026-06-23 09:44:53",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          9,
-          10,
-          12,
-          15,
-          26
-        ],
-        "sub": [
-          4,
-          5
-        ],
-        "score": 33.4,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          9,
-          11,
-          13,
-          14,
-          32
-        ],
-        "sub": [
-          8,
-          12
-        ],
-        "score": 35.2,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          5,
-          16,
-          23,
-          27,
-          32
-        ],
-        "sub": [
-          3,
-          9
-        ],
-        "score": 30.9,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          3,
-          10,
-          12,
-          13,
-          22
-        ],
-        "sub": [
-          6,
-          10
-        ],
-        "score": 26.4,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          2,
-          10,
-          11,
-          15,
-          35
-        ],
-        "sub": [
-          4,
-          12
-        ],
-        "score": 32.4,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        4,
-        5,
-        15,
-        21,
-        32
-      ],
-      "sub": [
-        2,
-        11
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          15
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          32
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          5,
-          32
-        ],
-        "sub_matches": [],
-        "main_hits": 2,
-        "sub_hits": 0,
-        "total_hits": 2
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          15
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        4,
-        5,
-        15,
-        21,
-        32
-      ],
-      "actual_sub": [
-        2,
-        11
-      ],
-      "best_group": 3,
-      "best_hits": 2,
-      "avg_main_hits": 1.0,
-      "avg_sub_hits": 0.0,
-      "avg_total_hits": 1.0
-    }
-  },
-  {
-    "id": "pred_26069_20260622_105447",
-    "period": "26069",
-    "draw_date": "2026-06-22",
-    "created_at": "2026-06-22 10:54:47",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          8,
-          12,
-          13,
-          15,
-          34
-        ],
-        "sub": [
-          5,
-          6
-        ],
-        "score": 33.8,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          7,
-          10,
-          13,
-          14,
-          33
-        ],
-        "sub": [
-          1,
-          12
-        ],
-        "score": 34.7,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          1,
-          23,
-          24,
-          27,
-          32
-        ],
-        "sub": [
-          3,
-          6
-        ],
-        "score": 31.8,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          2,
-          17,
-          18,
-          20,
-          29
-        ],
-        "sub": [
-          5,
-          11
-        ],
-        "score": 29.2,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          7,
-          15,
-          19,
-          20,
-          29
-        ],
-        "sub": [
-          4,
-          7
-        ],
-        "score": 28.2,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        12,
-        19,
-        21,
-        24,
-        29
-      ],
-      "sub": [
-        3,
-        10
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          12
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          24
-        ],
-        "sub_matches": [
-          3
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 4,
-        "main_matches": [
-          29
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          19,
-          29
-        ],
-        "sub_matches": [],
-        "main_hits": 2,
-        "sub_hits": 0,
-        "total_hits": 2
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        12,
-        19,
-        21,
-        24,
-        29
-      ],
-      "actual_sub": [
-        3,
-        10
-      ],
-      "best_group": 3,
-      "best_hits": 2,
-      "avg_main_hits": 1.0,
-      "avg_sub_hits": 0.2,
-      "avg_total_hits": 1.2
-    }
-  },
-  {
-    "id": "pred_26068_20260618_094436",
-    "period": "26068",
-    "draw_date": "2026-06-20",
-    "created_at": "2026-06-18 09:44:36",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          8,
-          12,
-          13,
-          15,
-          34
-        ],
-        "sub": [
-          5,
-          6
-        ],
-        "score": 33.8,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          7,
-          10,
-          13,
-          14,
-          33
-        ],
-        "sub": [
-          1,
-          12
-        ],
-        "score": 34.7,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          1,
-          23,
-          24,
-          27,
-          32
-        ],
-        "sub": [
-          3,
-          6
-        ],
-        "score": 31.8,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          2,
-          17,
-          18,
-          20,
-          29
-        ],
-        "sub": [
-          5,
-          11
-        ],
-        "score": 29.2,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          7,
-          15,
-          19,
-          20,
-          29
-        ],
-        "sub": [
-          4,
-          7
-        ],
-        "score": 28.2,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        3,
-        11,
-        12,
-        21,
-        22
-      ],
-      "sub": [
-        6,
-        10
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          12
-        ],
-        "sub_matches": [
-          6
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 2,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 3,
-        "main_matches": [],
-        "sub_matches": [
-          6
-        ],
-        "main_hits": 0,
-        "sub_hits": 1,
-        "total_hits": 1
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        3,
-        11,
-        12,
-        21,
-        22
-      ],
-      "actual_sub": [
-        6,
-        10
-      ],
-      "best_group": 1,
-      "best_hits": 2,
-      "avg_main_hits": 0.2,
-      "avg_sub_hits": 0.4,
-      "avg_total_hits": 0.6
-    }
-  },
-  {
-    "id": "pred_26067_20260616_140402",
-    "period": "26067",
-    "draw_date": "2026-06-17",
-    "created_at": "2026-06-16 14:04:02",
-    "status": "completed",
-    "models_used": [
-      "frequency",
-      "poisson",
-      "exponential_smoothing",
-      "monte_carlo"
-    ],
-    "recommendations": [
-      {
-        "group": 1,
-        "main": [
-          9,
-          13,
-          18,
-          26,
-          34
-        ],
-        "sub": [
-          2,
-          5
-        ],
-        "score": 33.7,
-        "reason": "高频热号: 衰减加权频率+间隔分析贝叶斯融合，CRF全局评分优选"
-      },
-      {
-        "group": 2,
-        "main": [
-          9,
-          12,
-          18,
-          26,
-          31
-        ],
-        "sub": [
-          8,
-          12
-        ],
-        "score": 33.0,
-        "reason": "近期趋势: 滑动窗口+趋势涨幅+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 3,
-        "main": [
-          1,
-          5,
-          16,
-          27,
-          32
-        ],
-        "sub": [
-          6,
-          11
-        ],
-        "score": 34.5,
-        "reason": "追冷: 冷号中回补信号最强的号码(间隔异常度+近期升温)"
-      },
-      {
-        "group": 4,
-        "main": [
-          11,
-          13,
-          14,
-          20,
-          33
-        ],
-        "sub": [
-          1,
-          8
-        ],
-        "score": 30.9,
-        "reason": "马尔可夫: 转移概率+上期邻域增强+衰减频率贝叶斯融合"
-      },
-      {
-        "group": 5,
-        "main": [
-          8,
-          11,
-          18,
-          27,
-          35
-        ],
-        "sub": [
-          2,
-          7
-        ],
-        "score": 31.1,
-        "reason": "平衡策略: 避开极端冷热号，CRF结构评分选最优组合"
-      }
-    ],
-    "actual_draw": {
-      "main": [
-        6,
-        16,
-        18,
-        19,
-        28
-      ],
-      "sub": [
-        7,
-        11
-      ]
-    },
-    "matches": [
-      {
-        "group": 1,
-        "main_matches": [
-          18
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 2,
-        "main_matches": [
-          18
-        ],
-        "sub_matches": [],
-        "main_hits": 1,
-        "sub_hits": 0,
-        "total_hits": 1
-      },
-      {
-        "group": 3,
-        "main_matches": [
-          16
-        ],
-        "sub_matches": [
-          11
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      },
-      {
-        "group": 4,
-        "main_matches": [],
-        "sub_matches": [],
-        "main_hits": 0,
-        "sub_hits": 0,
-        "total_hits": 0
-      },
-      {
-        "group": 5,
-        "main_matches": [
-          18
-        ],
-        "sub_matches": [
-          7
-        ],
-        "main_hits": 1,
-        "sub_hits": 1,
-        "total_hits": 2
-      }
-    ],
-    "summary": {
-      "actual_main": [
-        6,
-        16,
-        18,
-        19,
-        28
-      ],
-      "actual_sub": [
-        7,
-        11
-      ],
-      "best_group": 3,
-      "best_hits": 2,
-      "avg_main_hits": 0.8,
-      "avg_sub_hits": 0.4,
       "avg_total_hits": 1.2
     }
   }

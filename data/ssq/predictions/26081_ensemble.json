@@ -1,10 +1,10 @@
 {
-  "id": "ensemble_26081_20260715_095339",
+  "id": "ensemble_26081_20260716_142941",
   "algorithm": "ensemble",
   "period": "26081",
   "draw_date": "2026-07-16",
-  "created_at": "2026-07-15 09:53:39",
-  "status": "active",
+  "created_at": "2026-07-16 14:29:41",
+  "status": "completed",
   "models_used": [
     "frequency",
     "poisson",
@@ -93,7 +93,86 @@
       "reason": "追冷E: 冷号55%+间隔异常60%"
     }
   ],
-  "actual_draw": null,
-  "matches": null,
-  "summary": null
+  "actual_draw": {
+    "main": [
+      6,
+      10,
+      12,
+      15,
+      24,
+      27
+    ],
+    "sub": [
+      12
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [
+        15
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 2,
+      "main_matches": [
+        15
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 3,
+      "main_matches": [
+        12
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        12,
+        27
+      ],
+      "sub_matches": [],
+      "main_hits": 2,
+      "sub_hits": 0,
+      "total_hits": 2
+    },
+    {
+      "group": 5,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      6,
+      10,
+      12,
+      15,
+      24,
+      27
+    ],
+    "actual_sub": [
+      12
+    ],
+    "best_group": 4,
+    "best_hits": 2,
+    "avg_main_hits": 1.0,
+    "avg_sub_hits": 0.0,
+    "avg_total_hits": 1.0
+  }
 }

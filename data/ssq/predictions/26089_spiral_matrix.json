@@ -1,0 +1,99 @@
+{
+  "id": "spiral_matrix_26089_20260803_175437",
+  "algorithm": "spiral_matrix",
+  "period": "26089",
+  "draw_date": "2026-08-04",
+  "created_at": "2026-08-03 17:54:37",
+  "status": "active",
+  "models_used": [
+    "frequency",
+    "poisson",
+    "exponential_smoothing",
+    "monte_carlo"
+  ],
+  "recommendations": [
+    {
+      "group": 1,
+      "main": [
+        4,
+        11,
+        16,
+        23,
+        28,
+        31
+      ],
+      "sub": [
+        12
+      ],
+      "score": 26.7,
+      "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+    },
+    {
+      "group": 2,
+      "main": [
+        4,
+        11,
+        15,
+        21,
+        26,
+        28
+      ],
+      "sub": [
+        16
+      ],
+      "score": 25.1,
+      "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+    },
+    {
+      "group": 3,
+      "main": [
+        7,
+        12,
+        16,
+        20,
+        27,
+        29
+      ],
+      "sub": [
+        5
+      ],
+      "score": 20.4,
+      "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+    },
+    {
+      "group": 4,
+      "main": [
+        10,
+        14,
+        16,
+        23,
+        29,
+        31
+      ],
+      "sub": [
+        12
+      ],
+      "score": 19.8,
+      "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+    },
+    {
+      "group": 5,
+      "main": [
+        11,
+        15,
+        24,
+        26,
+        28,
+        31
+      ],
+      "sub": [
+        6
+      ],
+      "score": 24.9,
+      "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐1码]"
+    }
+  ],
+  "actual_draw": null,
+  "matches": null,
+  "summary": null
+}

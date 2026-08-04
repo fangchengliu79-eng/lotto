@@ -1,0 +1,179 @@
+{
+  "id": "ensemble_26085_20260728_181138",
+  "algorithm": "ensemble",
+  "period": "26085",
+  "draw_date": "2026-07-29",
+  "created_at": "2026-07-28 18:11:38",
+  "status": "completed",
+  "models_used": [
+    "frequency",
+    "poisson",
+    "exponential_smoothing",
+    "monte_carlo"
+  ],
+  "recommendations": [
+    {
+      "group": 1,
+      "main": [
+        1,
+        17,
+        24,
+        25,
+        30
+      ],
+      "sub": [
+        3,
+        6
+      ],
+      "score": 27.4,
+      "reason": "追冷A: 冷号30%+间隔异常75%"
+    },
+    {
+      "group": 2,
+      "main": [
+        7,
+        19,
+        20,
+        24,
+        25
+      ],
+      "sub": [
+        3,
+        11
+      ],
+      "score": 30.7,
+      "reason": "追冷B: 冷号35%+间隔异常65%"
+    },
+    {
+      "group": 3,
+      "main": [
+        7,
+        20,
+        21,
+        28,
+        32
+      ],
+      "sub": [
+        6,
+        11
+      ],
+      "score": 31.1,
+      "reason": "追冷C: 冷号40%+间隔异常80%"
+    },
+    {
+      "group": 4,
+      "main": [
+        6,
+        17,
+        27,
+        28,
+        33
+      ],
+      "sub": [
+        7,
+        10
+      ],
+      "score": 30.5,
+      "reason": "追冷D: 冷号50%+间隔异常70%"
+    },
+    {
+      "group": 5,
+      "main": [
+        1,
+        14,
+        23,
+        27,
+        33
+      ],
+      "sub": [
+        7,
+        10
+      ],
+      "score": 29.5,
+      "reason": "追冷E: 冷号55%+间隔异常60%"
+    }
+  ],
+  "actual_draw": {
+    "main": [
+      3,
+      4,
+      14,
+      28,
+      31
+    ],
+    "sub": [
+      5,
+      7
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 2,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 3,
+      "main_matches": [
+        28
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        28
+      ],
+      "sub_matches": [
+        7
+      ],
+      "main_hits": 1,
+      "sub_hits": 1,
+      "total_hits": 2
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        14
+      ],
+      "sub_matches": [
+        7
+      ],
+      "main_hits": 1,
+      "sub_hits": 1,
+      "total_hits": 2
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      3,
+      4,
+      14,
+      28,
+      31
+    ],
+    "actual_sub": [
+      5,
+      7
+    ],
+    "best_group": 4,
+    "best_hits": 2,
+    "avg_main_hits": 0.6,
+    "avg_sub_hits": 0.4,
+    "avg_total_hits": 1.0
+  }
+}

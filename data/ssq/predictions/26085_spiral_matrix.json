@@ -1,0 +1,173 @@
+{
+  "id": "spiral_matrix_26085_20260724_101743",
+  "algorithm": "spiral_matrix",
+  "period": "26085",
+  "draw_date": "2026-07-26",
+  "created_at": "2026-07-24 10:17:43",
+  "status": "completed",
+  "models_used": [
+    "frequency",
+    "poisson",
+    "exponential_smoothing",
+    "monte_carlo"
+  ],
+  "recommendations": [
+    {
+      "group": 1,
+      "main": [
+        4,
+        7,
+        20,
+        27,
+        29,
+        32
+      ],
+      "sub": [
+        9
+      ],
+      "score": 32.3,
+      "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+    },
+    {
+      "group": 2,
+      "main": [
+        9,
+        12,
+        21,
+        26,
+        29,
+        32
+      ],
+      "sub": [
+        12
+      ],
+      "score": 20.0,
+      "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+    },
+    {
+      "group": 3,
+      "main": [
+        11,
+        18,
+        20,
+        23,
+        26,
+        29
+      ],
+      "sub": [
+        3
+      ],
+      "score": 18.7,
+      "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+    },
+    {
+      "group": 4,
+      "main": [
+        11,
+        14,
+        16,
+        21,
+        27,
+        32
+      ],
+      "sub": [
+        5
+      ],
+      "score": 28.6,
+      "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+    },
+    {
+      "group": 5,
+      "main": [
+        7,
+        11,
+        21,
+        24,
+        26,
+        30
+      ],
+      "sub": [
+        11
+      ],
+      "score": 25.7,
+      "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+    }
+  ],
+  "actual_draw": {
+    "main": [
+      6,
+      9,
+      13,
+      17,
+      24,
+      28
+    ],
+    "sub": [
+      15
+    ]
+  },
+  "matches": [
+    {
+      "group": 1,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 2,
+      "main_matches": [
+        9
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 3,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 4,
+      "main_matches": [],
+      "sub_matches": [],
+      "main_hits": 0,
+      "sub_hits": 0,
+      "total_hits": 0
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        24
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    }
+  ],
+  "summary": {
+    "actual_main": [
+      6,
+      9,
+      13,
+      17,
+      24,
+      28
+    ],
+    "actual_sub": [
+      15
+    ],
+    "best_group": 2,
+    "best_hits": 1,
+    "avg_main_hits": 0.4,
+    "avg_sub_hits": 0.0,
+    "avg_total_hits": 0.4
+  }
+}
