@@ -1,9 +1,9 @@
 {
-  "id": "spiral_matrix_26081_20260716_142941",
+  "id": "spiral_matrix_26114_20260930_091604",
   "algorithm": "spiral_matrix",
-  "period": "26081",
-  "draw_date": "2026-07-16",
-  "created_at": "2026-07-16 14:29:41",
+  "period": "26114",
+  "draw_date": "2026-10-01",
+  "created_at": "2026-09-30 09:16:04",
   "status": "completed",
   "models_used": [
     "frequency",
@@ -16,94 +16,94 @@
       "group": 1,
       "main": [
         4,
+        6,
         11,
-        16,
-        21,
-        28,
-        31
+        13,
+        25,
+        30
       ],
       "sub": [
-        7
+        4
       ],
-      "score": 26.0,
-      "reason": "❄️冷号轮转A: 最冷12码->旋转矩阵优选"
+      "score": 33.0,
+      "reason": "🔥热号轮转: 衰减加权前12码->旋转矩阵(4-if-6)优选"
     },
     {
       "group": 2,
       "main": [
-        4,
-        16,
-        21,
-        28,
-        31,
-        33
+        1,
+        3,
+        6,
+        9,
+        12,
+        14
       ],
       "sub": [
-        3
+        16
       ],
-      "score": 26.6,
-      "reason": "❄️冷号轮转B: 冷号10码+间隔异常6码->旋转矩阵优选"
+      "score": 25.9,
+      "reason": "📈趋势轮转: 近期窗口+上期邻域->旋转矩阵优选"
     },
     {
       "group": 3,
       "main": [
-        7,
-        14,
-        16,
+        11,
+        20,
         23,
         26,
-        29
+        28,
+        31
       ],
       "sub": [
-        7
+        8
       ],
-      "score": 21.1,
-      "reason": "❄️冷号轮转C: 冷半区间隔异常TOP14->旋转矩阵优选"
+      "score": 23.5,
+      "reason": "❄️冷号轮转: 低频后14码->旋转矩阵优选"
     },
     {
       "group": 4,
       "main": [
+        1,
+        3,
         5,
-        8,
-        14,
-        18,
-        21,
-        29
+        10,
+        12,
+        18
       ],
       "sub": [
-        6
+        4
       ],
-      "score": 29.0,
-      "reason": "❄️冷号轮转D: 冷号8码+中段8码->旋转矩阵优选"
+      "score": 22.5,
+      "reason": "🔗邻域轮转: 上期号码+邻域补全->旋转矩阵优选"
     },
     {
       "group": 5,
       "main": [
+        2,
         5,
         11,
-        15,
-        24,
-        28,
-        30
+        18,
+        22,
+        25
       ],
       "sub": [
-        14
+        6
       ],
-      "score": 29.7,
-      "reason": "❄️冷号轮转E: 冷号(频率+遗漏加权)12码->旋转矩阵优选 [+补齐2码]"
+      "score": 30.1,
+      "reason": "⚖️平衡轮转: 避开极端冷热,中间14码->旋转矩阵优选"
     }
   ],
   "actual_draw": {
     "main": [
-      6,
-      10,
-      12,
-      15,
+      7,
+      18,
+      23,
       24,
-      27
+      29,
+      31
     ],
     "sub": [
-      12
+      10
     ]
   },
   "matches": [
@@ -125,48 +125,52 @@
     },
     {
       "group": 3,
-      "main_matches": [],
-      "sub_matches": [],
-      "main_hits": 0,
-      "sub_hits": 0,
-      "total_hits": 0
-    },
-    {
-      "group": 4,
-      "main_matches": [],
-      "sub_matches": [],
-      "main_hits": 0,
-      "sub_hits": 0,
-      "total_hits": 0
-    },
-    {
-      "group": 5,
       "main_matches": [
-        15,
-        24
+        23,
+        31
       ],
       "sub_matches": [],
       "main_hits": 2,
       "sub_hits": 0,
       "total_hits": 2
+    },
+    {
+      "group": 4,
+      "main_matches": [
+        18
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
+    },
+    {
+      "group": 5,
+      "main_matches": [
+        18
+      ],
+      "sub_matches": [],
+      "main_hits": 1,
+      "sub_hits": 0,
+      "total_hits": 1
     }
   ],
   "summary": {
     "actual_main": [
-      6,
-      10,
-      12,
-      15,
+      7,
+      18,
+      23,
       24,
-      27
+      29,
+      31
     ],
     "actual_sub": [
-      12
+      10
     ],
-    "best_group": 5,
+    "best_group": 3,
     "best_hits": 2,
-    "avg_main_hits": 0.4,
+    "avg_main_hits": 0.8,
     "avg_sub_hits": 0.0,
-    "avg_total_hits": 0.4
+    "avg_total_hits": 0.8
   }
 }
