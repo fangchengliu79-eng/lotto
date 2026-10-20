@@ -319,14 +319,22 @@ class SpiralMatrixPredictor:
         main_win_prob = (main_win + 1) / (main_win.sum() + main_range_size)
         sub_win_prob = (sub_win + 1) / (sub_win.sum() + sub_range_size)
 
-        # ── 相邻期蓝球去重（2026-10-20）：只看次数、不看号码 ──
-        # 同一期内蓝球可重复（最多3组），但上一期堆过的蓝球本期最多1组，最近3期≥4次的本期0组
-        from models.ensemble import _load_blue_period_history, _blue_caps
+        # ── 相邻期蓝球去重 —— 规则 v3（2026-10-20）──
+        # 双色球：上一期猜中的蓝球，本期 0 组；其余情况全部放行（沿用原算法）。
+        # 大乐透：沿用原"次数配额"逻辑不变。
         _latest_data_period = int(df.iloc[0]["period"])
-        _prev_sub, _recent_sub = _load_blue_period_history(
-            cfg, "spiral_matrix", periods=3, max_period=_latest_data_period)
-        blue_caps = _blue_caps(_prev_sub, _recent_sub, sub_min, sub_max,
-                               base_cap=3, needed_slots=sub_k * num_groups)
+        if cfg.short == "dlt":
+            from models.ensemble import _load_blue_period_history, _blue_caps
+            _prev_sub, _recent_sub = _load_blue_period_history(
+                cfg, "spiral_matrix", periods=3, max_period=_latest_data_period)
+            blue_caps = _blue_caps(_prev_sub, _recent_sub, sub_min, sub_max,
+                                   base_cap=3, needed_slots=sub_k * num_groups)
+        else:
+            from models.ensemble import _load_blue_prev_hits, _blue_caps_hit_only
+            _drawn_sub = [int(df.iloc[0][c]) for c in cfg.sub_cols]
+            _prev_hit_blues = _load_blue_prev_hits(
+                cfg, _latest_data_period, _drawn_sub, "spiral_matrix")
+            blue_caps = _blue_caps_hit_only(_prev_hit_blues, sub_min, sub_max, base_cap=3)
 
         def _pick_top_n(probs, n):
             ranked = sorted([(i + main_min, probs[i]) for i in range(len(probs))], key=lambda x: -x[1])
