@@ -31,6 +31,36 @@ import pandas as pd
 # 这里统计"本算法自己最近 10 期推荐过的号码"，对过度重复的号码降权/后排。
 # ══════════════════════════════════════════════════════════════════════
 
+def _build_sub_quota(recent_sub_counts, sub_min: int, sub_max: int,
+                     base_cap: int, needed_slots: int):
+    """蓝球跨期配额：与具体号码无关，只按"近3期被推荐多少次"限组。
+
+    r3 <= 1 → base_cap；r3 <= 3 → base_cap-1；r3 <= 5 → 1；r3 >= 6 → 0
+    （问题本质是"某个蓝球在相近几期被反复堆量"，不是某个号码本身有问题）
+    """
+    quota = {}
+    for n in range(sub_min, sub_max + 1):
+        r3 = int(recent_sub_counts.get(n, 0))
+        if r3 <= 1:
+            q = base_cap
+        elif r3 <= 3:
+            q = max(1, base_cap - 1)
+        elif r3 <= 5:
+            q = 1
+        else:
+            q = 0
+        quota[n] = q
+    guard = 0
+    while sum(quota.values()) < needed_slots and guard < 100:
+        guard += 1
+        cands = [n for n in quota if quota[n] < base_cap]
+        if not cands:
+            break
+        cand = min(cands, key=lambda n: (recent_sub_counts.get(n, 0), n))
+        quota[cand] += 1
+    return quota
+
+
 def _load_hist_counts(cfg, algorithm: str = "spiral_matrix",
                       max_records: int = 10, recent_records: int = 3):
     """统计最近 max_records 期本算法预测中号码的推荐次数。
@@ -395,6 +425,10 @@ class SpiralMatrixPredictor:
         hist_main_factor = _hist_factor_array(_h_main, _hr_main, main_min, main_range_size)
         hist_sub_factor = _hist_factor_array(_h_sub, _hr_sub, sub_min, sub_range_size)
         hist_main_recent = _hr_main
+        # 蓝球跨期配额（硬约束，与具体号码无关）：近3期被堆量的蓝球本期限组
+        _sub_base_cap = 3 if sub_k == 1 else 4
+        sub_quota = _build_sub_quota(_hr_sub, sub_min, sub_max,
+                                    _sub_base_cap, sub_k * num_groups)
 
         def _pick_top_n(probs, n):
             ranked = sorted([(i + main_min, probs[i]) for i in range(len(probs))], key=lambda x: -x[1])
@@ -524,6 +558,12 @@ class SpiralMatrixPredictor:
                 if 0 <= _sidx < sub_range_size and _sc >= 1:
                     sp[_sidx] *= (0.45 if _sc == 1 else 0.10)
             sp = np.maximum(sp, 1e-12)
+            # ── 跨期配额硬约束：近3期被堆量的蓝球本期限组（与具体号码无关）──
+            for _bn in range(sub_min, sub_max + 1):
+                if used_sub_counts.get(_bn, 0) >= sub_quota.get(_bn, _sub_base_cap):
+                    sp[_bn - sub_min] = 0.0
+            if sp.sum() <= 0:
+                sp = np.ones(sub_range_size)
             sp = sp / sp.sum()
             best_back = _pick_sub_weighted(sp, sub_k)
 

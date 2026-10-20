@@ -54,6 +54,47 @@ INTRA_PAIR = 0.10           # 号码对已同现 ≥2 次
 #   - 长窗口：压制长期死守的号码（守号问题）
 #   - 近窗口：压制最近 1-3 期被过度重复推送的号码（如蓝球 04 连推 3 期 ×3 次）
 # ========================================================================
+def _build_sub_quota(recent_sub_counts, sub_min: int, sub_max: int,
+                     base_cap: int, needed_slots: int):
+    """蓝球跨期配额 —— 与具体号码完全无关的硬规则（2026-10-20）。
+
+    问题本质：不是某个号码（如 04）有问题，而是「某个蓝球在相近几期被反复堆量」这个结构性缺陷。
+    只要蓝球集中度上升，换任何号码都是同一个毛病。因此这里对不同号码一视同仁地按
+    "近3期已被推荐多少次"限组：
+
+        r3（近3期推荐次数）   本期允许出现的组数
+        r3 <= 1              base_cap      （近3期基本没推过，正常参与）
+        r3 <= 3              base_cap - 1
+        r3 <= 5              1             （已偏多，本期限 1 组）
+        r3 >= 6              0             （近3期堆了6次以上，本期直接让位给别的号）
+
+    与幂律概率压制互补：概率压制只是"调低权重"，仍可能被抽中；配额是"抽不中也算违规"的硬约束。
+    """
+    quota = {}
+    for n in range(sub_min, sub_max + 1):
+        r3 = int(recent_sub_counts.get(n, 0))
+        if r3 <= 1:
+            q = base_cap
+        elif r3 <= 3:
+            q = max(1, base_cap - 1)
+        elif r3 <= 5:
+            q = 1
+        else:
+            q = 0
+        quota[n] = q
+
+    # 可行性兜底：若总配额不足以填满本期所有蓝球位，按近3期推荐次数从少到多逐步放开
+    guard = 0
+    while sum(quota.values()) < needed_slots and guard < 100:
+        guard += 1
+        cands = [n for n in quota if quota[n] < base_cap]
+        if not cands:
+            break
+        cand = min(cands, key=lambda n: (recent_sub_counts.get(n, 0), n))
+        quota[cand] += 1
+    return quota
+
+
 def _load_prediction_history_counts(cfg, max_records: int = 10, recent_records: int = 3):
     """统计最近 max_records 期 ensemble 预测的号码/号码对推荐次数。
 
@@ -670,6 +711,26 @@ def generate_recommendations(
         recent_main_counts, recent_sub_counts = \
         _load_prediction_history_counts(cfg, max_records=10, recent_records=3)
 
+    # 蓝球跨期配额（硬约束，与具体号码无关）：近3期被堆量的蓝球，本期限制出现组数
+    sub_base_cap = 3 if cfg.sub_count == 1 else 4
+    sub_quota = _build_sub_quota(recent_sub_counts, cfg.sub_min, cfg.sub_max,
+                                 sub_base_cap, cfg.sub_count * num_groups)
+
+    def _enforce_sub_quota(s_strat):
+        """超配额的蓝球概率直接清零。配额按"近3期多少次"统一计算，不对任何号码特殊化。"""
+        s = np.array(s_strat, dtype=float)
+        for i in range(sub_n):
+            _bn = sub_range[i]
+            if used_sub_counts.get(_bn, 0) >= sub_quota.get(_bn, sub_base_cap):
+                s[i] = 0.0
+        if s.sum() <= 0:
+            return np.array(s_strat, dtype=float)
+        return s / s.sum()
+
+    def _quota_ok(sub_result):
+        return all(used_sub_counts.get(n, 0) < sub_quota.get(n, sub_base_cap)
+                   for n in sub_result)
+
     def _apply_hist_penalty(m_strat, s_strat):
         """对概率分布施加跨期惩罚（长窗口 + 近1-3期过度重复），返回归一化后的副本。
 
@@ -944,6 +1005,8 @@ def generate_recommendations(
 
                 # ── 历史预测记忆惩罚（长窗口10期 + 近1-3期过度重复）──
                 m_strat, s_strat = _apply_hist_penalty(m_strat, s_strat)
+                # ── 蓝球跨期配额硬约束（与具体号码无关）──
+                s_strat = _enforce_sub_quota(s_strat)
                 return m_strat, s_strat
 
             # 首次尝试
@@ -1033,6 +1096,8 @@ def generate_recommendations(
                     if 0 <= _idx < sub_n:
                         _f = INTRA_SUB_2 if _sc >= 2 else INTRA_SUB_1
                         ss[_idx] *= _f ** pen_level
+                # ── 蓝球跨期配额硬约束（与具体号码无关）──
+                ss = _enforce_sub_quota(ss)
                 sm = np.maximum(sm, 1e-12); sm = sm / sm.sum()
                 ss = np.maximum(ss, 1e-12); ss = ss / ss.sum()
                 return sm, ss
@@ -1046,7 +1111,8 @@ def generate_recommendations(
             # 不满足约束则重试（换种子 + 加大惩罚，最多3次）
             max_retries = 3
             retry_count = 0
-            while not _check_constraints(main_result, sub_result) and retry_count < max_retries:
+            while (not _check_constraints(main_result, sub_result) or not _quota_ok(sub_result)) \
+                    and retry_count < max_retries:
                 retry_count += 1
                 new_seed = seed + retry_count * 137
                 sm2, ss2 = _build(1.0 + retry_count)
