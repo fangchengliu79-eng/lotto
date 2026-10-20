@@ -12,7 +12,9 @@ from config_ssq import SSQ
 from data_fetcher import update_data
 from models.statistical import FrequencyModel, PoissonModel, MonteCarloModel
 from models.timeseries import ExponentialSmoothingModel
-from models.ensemble import EnsembleModel, generate_recommendations, _load_prediction_history_counts
+from models.ensemble import (EnsembleModel, generate_recommendations,
+                             _load_prediction_history_counts,
+                             _load_blue_period_history, _blue_caps)
 from models.spiral_matrix import SpiralMatrixPredictor
 from utils.predictions import (_load_all, _save_all, save_prediction,
                                get_all_predictions)
@@ -22,9 +24,10 @@ df = update_data(cfg)
 print("数据期数:", len(df), "最新期:", int(df.iloc[0]["period"]))
 
 # 历史推荐统计（改造前状态，用于对照）
-mc, sc, mp, sp, rm, rs = _load_prediction_history_counts(cfg, 10, 3)
-print("近10期蓝球推荐次数 TOP6:", sorted(sc.items(), key=lambda x: -x[1])[:6])
-print("近3期蓝球推荐次数 TOP6:", sorted(rs.items(), key=lambda x: -x[1])[:6])
+prev_sub, recent_sub = _load_blue_period_history(cfg, "ensemble", 3, int(df.iloc[0]["period"]))
+print("上一期蓝球推荐次数:", prev_sub)
+print("最近3期蓝球累计:", recent_sub)
+print("本期蓝球配额:", _blue_caps(prev_sub, recent_sub, cfg.sub_min, cfg.sub_max, 3, 5))
 
 # 目标期号：现有 active 期号，否则 最新数据期+1
 all_p = _load_all(cfg)
