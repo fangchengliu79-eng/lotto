@@ -25,6 +25,75 @@ import pandas as pd
 
 
 # ══════════════════════════════════════════════════════════════════════
+# 跨期预测记忆（2026-10-20 新增）
+# 螺旋矩阵的号池是静态的（按频率升序），策略种子也固定，若不加跨期记忆，
+# 同一批号码会每期重复出现（实测双色球前区 11 在 10 期 50 个推荐位中出现 27 次）。
+# 这里统计"本算法自己最近 10 期推荐过的号码"，对过度重复的号码降权/后排。
+# ══════════════════════════════════════════════════════════════════════
+
+def _load_hist_counts(cfg, algorithm: str = "spiral_matrix",
+                      max_records: int = 10, recent_records: int = 3):
+    """统计最近 max_records 期本算法预测中号码的推荐次数。
+
+    Returns:
+        (main_counts, sub_counts, recent_main, recent_sub)
+        recent_* 只统计最近 recent_records 期（用于"近1-3期过度重复"重罚）
+    """
+    main_counts, sub_counts = {}, {}
+    recent_main, recent_sub = {}, {}
+    try:
+        from utils.predictions import get_all_predictions
+        preds = [p for p in get_all_predictions(cfg)
+                 if p.get("algorithm") == algorithm
+                 and p.get("status") in ("active", "completed")]
+    except Exception:
+        preds = []
+    preds.sort(key=lambda p: str(p.get("period", "")), reverse=True)
+    for rank, p in enumerate(preds[:max_records]):
+        in_recent = rank < recent_records
+        for g in p.get("recommendations", []):
+            for n in g.get("main", []):
+                main_counts[n] = main_counts.get(n, 0) + 1
+                if in_recent:
+                    recent_main[n] = recent_main.get(n, 0) + 1
+            for n in g.get("sub", []):
+                sub_counts[n] = sub_counts.get(n, 0) + 1
+                if in_recent:
+                    recent_sub[n] = recent_sub.get(n, 0) + 1
+    return main_counts, sub_counts, recent_main, recent_sub
+
+
+def _hist_factor_array(long_counts: dict, recent_counts: dict,
+                       lo: int, size: int) -> np.ndarray:
+    """把推荐次数映射为概率乘性因子（长窗口10期 + 近3期过度重复双层压制）。
+
+    ⚠️ 用「相对倍数 r = 实际次数 / 期望次数」+ 幂律曲线，而不是绝对次数或硬档位。
+    10期×5组×6码=300个推荐位 / 33个红球 ≈ 平均每个号被推 9 次；按绝对次数压制会把
+    概率分布整体压平，导致所有策略收敛到同一个组合（实测 5 组红球完全一样）。
+    幂律：factor = r**(-k)，r<=1 不罚，r 越大罚得越狠且曲线连续。
+    """
+    f = np.ones(size)
+
+    def _apply(counts, k):
+        total = sum(counts.values()) if counts else 0
+        if total <= 0 or size <= 0:
+            return
+        exp = total / float(size)
+        for num, cnt in counts.items():
+            idx = num - lo
+            if not (0 <= idx < size):
+                continue
+            r = cnt / exp
+            if r <= 1.0:
+                continue
+            f[idx] *= max(r ** (-k), 0.005)
+
+    _apply(long_counts, 2.5)     # 长窗口：压制守号
+    _apply(recent_counts, 3.0)   # 近1-3期过度重复：罚更狠
+    return f
+
+
+# ══════════════════════════════════════════════════════════════════════
 # 覆盖设计索引表 (Covering Design Index Tables)
 # ══════════════════════════════════════════════════════════════════════
 
@@ -319,6 +388,14 @@ class SpiralMatrixPredictor:
         main_win_prob = (main_win + 1) / (main_win.sum() + main_range_size)
         sub_win_prob = (sub_win + 1) / (sub_win.sum() + sub_range_size)
 
+        # ── 跨期预测记忆（2026-10-20 新增）──
+        # 统计本算法自己最近10期推荐过哪些号码，对"近1-3期被过度重复推送"的号码重罚，
+        # 防止静态号池 + 固定种子导致每期推送同一批号码（如蓝球 04 连推3期×3次）。
+        _h_main, _h_sub, _hr_main, _hr_sub = _load_hist_counts(cfg, "spiral_matrix")
+        hist_main_factor = _hist_factor_array(_h_main, _hr_main, main_min, main_range_size)
+        hist_sub_factor = _hist_factor_array(_h_sub, _hr_sub, sub_min, sub_range_size)
+        hist_main_recent = _hr_main
+
         def _pick_top_n(probs, n):
             ranked = sorted([(i + main_min, probs[i]) for i in range(len(probs))], key=lambda x: -x[1])
             return [num for num, _ in ranked[:n]]
@@ -408,6 +485,10 @@ class SpiralMatrixPredictor:
             """单个策略: 选池 -> 补齐 -> 轮转 -> CRF优选 -> 约束检查"""
             if len(pool) < k:
                 return None
+
+            # ── 跨期记忆：近3期被反复推送的号码后排（不硬删，池子够长时自然被截掉）──
+            pool = sorted(pool, key=lambda n: 0 if hist_main_recent.get(n, 0) < 6 else 1)
+
             pool = pool[:min(n_main, len(pool))]
 
             # ── [安全补齐] 确保 pool 长度达到覆盖设计表需要的最小值 ──
@@ -436,6 +517,14 @@ class SpiralMatrixPredictor:
 
             # 蓝球: 根据本策略的概率分布加权选取
             sp = sub_probs if sub_probs is not None else sub_decay_prob
+            # ── 跨期记忆 + 本期已用降权（防止蓝球在一期内扎堆 3 次）──
+            sp = np.array(sp, dtype=float) * hist_sub_factor
+            for _sn, _sc in (used_sub_counts or {}).items():
+                _sidx = _sn - sub_min
+                if 0 <= _sidx < sub_range_size and _sc >= 1:
+                    sp[_sidx] *= (0.45 if _sc == 1 else 0.10)
+            sp = np.maximum(sp, 1e-12)
+            sp = sp / sp.sum()
             best_back = _pick_sub_weighted(sp, sub_k)
 
             # CRF优选: 结构评分 + 概率评分 + DLT形态评分

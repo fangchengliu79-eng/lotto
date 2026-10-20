@@ -25,6 +25,7 @@ from utils.predictions import (
     auto_compare_latest, force_check_overdue, get_recent_draws_html
 )
 from utils.helpers import print_disclaimer
+from utils.prizes import evaluate, evaluate_prediction, fmt_money, level_badge
 
 st.set_page_config(page_title="彩票预测系统", page_icon="🎯", layout="wide")
 
@@ -115,11 +116,78 @@ def hist_row(rec, mm=None, cfg=None):
     sb = "".join(ball(n, "sub", n in sh) for n in rec["sub"])
     t = m.get("total_hits", 0) if m else 0
     bdg = f"<span style='color:#eab308;font-weight:700;font-size:0.85rem;'>🎯 命中 {t}个</span>" if t > 0 else ""
+
+    # ── 奖级 / 奖金徽标 ──
+    pz = (m or {}).get("prize")
+    if pz is None and m:
+        try:
+            pz = evaluate(cfg, m.get("main_hits", 0), m.get("sub_hits", 0))
+        except Exception:
+            pz = None
+    prize_badge = ""
+    if pz and pz.get("level", 0) > 0:
+        est = "（浮动估算）" if pz.get("floating") else ""
+        prize_badge = (f"<span style='background:#fef3c7;border:1px solid #fcd34d;color:#92400e;"
+                       f"border-radius:7px;padding:0.12rem 0.5rem;font-size:0.75rem;font-weight:700;'>"
+                       f"🏅 {pz['level_name']} {fmt_money(pz['amount'])}{est}</span>")
+
     return (f"<div style='background:#fafbfc;border:1px solid #e2e8f0;border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.4rem;display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;'>"
             f"<span style='font-weight:700;color:#94a3b8;font-size:0.75rem;min-width:2.5rem;'>第{g}组</span>"
             f"<span style='font-size:0.7rem;color:#94a3b8;'>{cfg.main_label}</span>{mb}"
             f"<span style='font-size:0.7rem;color:#94a3b8;margin-left:0.3rem;'>{cfg.sub_label}</span>{sb}"
-            f"{'&nbsp;'+bdg if bdg else ''}</div>")
+            f"{'&nbsp;'+bdg if bdg else ''}{'&nbsp;'+prize_badge if prize_badge else ''}</div>")
+
+
+def prize_block(pred, cfg):
+    """奖金核对区块：奖级明细 + 合计奖金 / 投入 / 盈亏。旧记录无 prize 字段时现场计算。"""
+    try:
+        pz = evaluate_prediction(pred, cfg)
+    except Exception:
+        return ""
+    if not pz.get("groups"):
+        return ""
+
+    chips = ""
+    for g in pz["groups"]:
+        if g["level"] <= 0:
+            continue
+        est = "（浮动估算）" if g["floating"] else ""
+        chips += (f"<span style='display:inline-block;background:#fef3c7;border:1px solid #fcd34d;"
+                  f"color:#92400e;border-radius:8px;padding:0.18rem 0.55rem;font-size:0.75rem;"
+                  f"font-weight:700;margin:0.15rem 0.3rem 0.15rem 0;'>"
+                  f"第{g['group']}组 · {g['main_hits']}+{g['sub_hits']} · {g['level_name']} {fmt_money(g['amount'])}{est}</span>")
+    if not chips:
+        chips = f"<span style='color:#94a3b8;font-size:0.8rem;'>本期 {len(pz['groups'])} 组均未中奖</span>"
+
+    profit = pz["profit"]
+    pcolor = "#059669" if profit > 0 else ("#dc2626" if profit < 0 else "#64748b")
+    psign = "+" if profit > 0 else ""
+    note = ("<div style='color:#a16207;font-size:0.68rem;margin-top:0.35rem;'>"
+            "※ 一/二等奖为国家浮动奖，按估算值计入，实际以官方公布为准</div>") if pz["has_floating"] else ""
+
+    return (
+        "<div style='background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:0.7rem 0.9rem;margin:0.6rem 0;'>"
+        "<div style='display:flex;flex-wrap:wrap;gap:1.2rem;align-items:baseline;margin-bottom:0.4rem;'>"
+        "<span style='font-weight:800;color:#92400e;font-size:0.85rem;'>💰 奖金核对</span>"
+        f"<span style='font-size:0.82rem;color:#475569;'>中奖 <b>{pz['win_groups']}</b>/{len(pz['groups'])} 组</span>"
+        f"<span style='font-size:0.82rem;color:#475569;'>奖金合计 <b style='color:#b45309;font-size:0.95rem;'>{fmt_money(pz['total_amount'])}</b></span>"
+        f"<span style='font-size:0.82rem;color:#475569;'>投入 {fmt_money(pz['cost'])}</span>"
+        f"<span style='font-size:0.82rem;color:{pcolor};font-weight:800;'>盈亏 {psign}{fmt_money(profit)}</span>"
+        f"</div><div>{chips}</div>{note}</div>"
+    )
+
+def prize_head(pred, cfg):
+    """历史折叠标题上的奖金后缀（' · 奖金 ¥20' / ' · 未中奖'）。"""
+    try:
+        pz = evaluate_prediction(pred, cfg)
+    except Exception:
+        return ""
+    if not pz.get("groups"):
+        return ""
+    if pz["total_amount"] <= 0:
+        return " · 未中奖"
+    return f" · 奖金 {fmt_money(pz['total_amount'])}"
+
 
 def spiral_card(rec, cfg):
     """螺旋矩阵结果卡片 - 紫金配色"""
@@ -467,7 +535,7 @@ def render_lottery(cfg):
                     ps, pp, pc, pr_ = pred["status"], pred["period"], pred.get("draw_date", pred.get("created_at","")[:10] or ""), len(pred.get("recommendations",[]))
                     if ps == "completed" and pred.get("summary"):
                         s = pred["summary"]
-                        with st.expander(f"**期 {pp}** ✅ 已比对 · 最佳 {s['best_hits']} 个 · {pc}", expanded=False):
+                        with st.expander(f"**期 {pp}** ✅ 已比对 · 最佳 {s['best_hits']} 个{prize_head(pred, cfg)} · {pc}", expanded=False):
                             if pred.get("actual_draw"):
                                 am = "".join(ball(n,"main") for n in pred["actual_draw"]["main"])
                                 as_ = "".join(ball(n,"sub") for n in pred["actual_draw"]["sub"])
@@ -476,6 +544,7 @@ def render_lottery(cfg):
                             with ca: st.markdown(metric_card(f"{s['best_hits']} 个", "最佳命中"), unsafe_allow_html=True)
                             with cb: st.markdown(metric_card(f"{s['avg_main_hits']}", f"{cfg.main_label}平均"), unsafe_allow_html=True)
                             with cc: st.markdown(metric_card(f"{s['avg_sub_hits']}", f"{cfg.sub_label}平均"), unsafe_allow_html=True)
+                            st.markdown(prize_block(pred, cfg), unsafe_allow_html=True)
                             if pred.get("matches"):
                                 st.markdown("<h4 style='font-size:0.95rem;margin:1rem 0 0.5rem;color:#475569;'>各组预测号码</h4>", unsafe_allow_html=True)
                                 mm = {m["group"]: m for m in pred["matches"]}
@@ -493,7 +562,7 @@ def render_lottery(cfg):
                     ps, pp, pc, pr_ = pred["status"], pred["period"], pred.get("draw_date", pred.get("created_at","")[:10] or ""), len(pred.get("recommendations",[]))
                     if ps == "completed" and pred.get("summary"):
                         s = pred["summary"]
-                        with st.expander(f"🌀 **期 {pp}** ✅ 已比对 · 最佳 {s['best_hits']} 个 · {pc}", expanded=False):
+                        with st.expander(f"🌀 **期 {pp}** ✅ 已比对 · 最佳 {s['best_hits']} 个{prize_head(pred, cfg)} · {pc}", expanded=False):
                             if pred.get("actual_draw"):
                                 am = "".join(ball(n,"main") for n in pred["actual_draw"]["main"])
                                 as_ = "".join(ball(n,"sub") for n in pred["actual_draw"]["sub"])
@@ -502,6 +571,7 @@ def render_lottery(cfg):
                             with ca: st.markdown(metric_card(f"{s['best_hits']} 个", "最佳命中"), unsafe_allow_html=True)
                             with cb: st.markdown(metric_card(f"{s['avg_main_hits']}", f"{cfg.main_label}平均"), unsafe_allow_html=True)
                             with cc: st.markdown(metric_card(f"{s['avg_sub_hits']}", f"{cfg.sub_label}平均"), unsafe_allow_html=True)
+                            st.markdown(prize_block(pred, cfg), unsafe_allow_html=True)
                             if pred.get("matches"):
                                 st.markdown("<h4 style='font-size:0.95rem;margin:1rem 0 0.5rem;color:#475569;'>各组预测号码</h4>", unsafe_allow_html=True)
                                 mm = {m["group"]: m for m in pred["matches"]}

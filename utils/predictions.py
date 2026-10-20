@@ -245,6 +245,12 @@ def compare_with_draw(prediction: Dict, df: pd.DataFrame, cfg) -> Optional[Dict]
             "sub_hits": len(sub_matches),
             "total_hits": total,
         }
+        # 奖级/奖金（一等奖~六等奖 / 大乐透一等~九等）
+        try:
+            from .prizes import evaluate
+            match_info["prize"] = evaluate(cfg, len(main_matches), len(sub_matches))
+        except Exception:
+            match_info["prize"] = None
         matches.append(match_info)
         total_main_hits += len(main_matches)
         total_sub_hits += len(sub_matches)
@@ -267,6 +273,20 @@ def compare_with_draw(prediction: Dict, df: pd.DataFrame, cfg) -> Optional[Dict]
     prediction["actual_draw"] = {"main": actual_main, "sub": actual_sub}
     prediction["matches"] = matches
     prediction["summary"] = summary
+
+    # ── 奖金统计：按奖级规则逐组计算 + 合计投入/盈亏 ──
+    try:
+        from .prizes import evaluate_prediction
+        pz = evaluate_prediction(prediction, cfg)
+        summary["total_prize"] = pz["total_amount"]
+        summary["prize_cost"] = pz["cost"]
+        summary["prize_profit"] = pz["profit"]
+        summary["win_groups"] = pz["win_groups"]
+        summary["best_prize_level"] = pz["best_level"]
+        summary["has_floating_prize"] = pz["has_floating"]
+    except Exception as e:
+        get_logger(cfg).warning(f"奖金计算失败: {e}")
+
     prediction["status"] = "completed"
 
     # 保存更新

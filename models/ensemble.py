@@ -28,23 +28,48 @@ from utils.helpers import validate_numbers, get_logger
 from utils.predictions import get_all_predictions
 
 
+# ── 跨期记忆惩罚强度（幂律指数 k，见 generate_recommendations._apply_hist_penalty）──
+# 值越大压制越狠。红球不能太狠：压制过强会让 5 种策略的有效号池收缩到同一小批号码，
+# 结果 5 组红球高度雷同（2026-10-20 实测 k=2.5/3.0 时出现两组完全相同）。
+# 蓝球范围小(16)、重复更刺眼，所以蓝球用更狠的指数。
+HIST_K_LONG_MAIN = 1.3      # 红球长窗口(10期)
+HIST_K_LONG_SUB = 2.2       # 蓝球长窗口(10期)
+HIST_K_RECENT_MAIN = 1.6    # 红球近窗口(最近3期)
+HIST_K_RECENT_SUB = 3.0     # 蓝球近窗口(最近3期)
+
+# 本期内的降权系数（跨策略去重）：号码已出现在 1/2/3 组时的概率乘子
+# 2026-10-20 扫描结论：0.55 太松（第1、2组红球完全相同 6/6），0.30 才能保证 5 组组合互不相同
+INTRA_MAIN_1 = 0.30
+INTRA_MAIN_2 = 0.05
+INTRA_MAIN_3 = 0.01
+INTRA_SUB_1 = 0.45          # 蓝球首次重复即压，避免同一蓝球被推满 3 次
+INTRA_SUB_2 = 0.10
+INTRA_PAIR = 0.10           # 号码对已同现 ≥2 次
+
+
 # ========================================================================
-# 历史预测记忆（仅大乐透统计算法使用）
+# 历史预测记忆（跨期轮换，双色球 + 大乐透通用）
 # 统计最近 N 期 ensemble 预测中每个号码/号码对的推荐次数，
-# 用于对"反复推荐的号码"施加惩罚，实现跨期轮换，避免死守一组冷号。
+# 分为「长窗口(max_records期)」和「近窗口(recent_records期)」两层：
+#   - 长窗口：压制长期死守的号码（守号问题）
+#   - 近窗口：压制最近 1-3 期被过度重复推送的号码（如蓝球 04 连推 3 期 ×3 次）
 # ========================================================================
-def _load_prediction_history_counts(cfg, max_records: int = 10):
+def _load_prediction_history_counts(cfg, max_records: int = 10, recent_records: int = 3):
     """统计最近 max_records 期 ensemble 预测的号码/号码对推荐次数。
 
     Returns:
-        (main_counts, sub_counts, main_pairs, sub_pairs)
-        main_counts: {号码: 推荐次数}
-        main_pairs:  {frozenset({a,b}): 同时推荐次数}
+        (main_counts, sub_counts, main_pairs, sub_pairs, recent_main, recent_sub)
+        main_counts:  {号码: 最近max_records期推荐次数}
+        main_pairs:   {frozenset({a,b}): 同时推荐次数}
+        recent_main:  {号码: 最近recent_records期推荐次数}（用于过度重复重罚）
+        recent_sub:   {号码: 最近recent_records期推荐次数}
     """
     main_counts = {}
     sub_counts = {}
     main_pairs = {}
     sub_pairs = {}
+    recent_main = {}
+    recent_sub = {}
     try:
         preds = get_all_predictions(cfg)
     except Exception:
@@ -55,14 +80,19 @@ def _load_prediction_history_counts(cfg, max_records: int = 10):
            and p.get("status") in ("active", "completed")]
     ens.sort(key=lambda p: str(p.get("period", "")), reverse=True)
     ens = ens[:max_records]
-    for p in ens:
+    for rank, p in enumerate(ens):
+        in_recent = rank < recent_records
         for g in p.get("recommendations", []):
             m = g.get("main", [])
             s = g.get("sub", [])
             for n in m:
                 main_counts[n] = main_counts.get(n, 0) + 1
+                if in_recent:
+                    recent_main[n] = recent_main.get(n, 0) + 1
             for n in s:
                 sub_counts[n] = sub_counts.get(n, 0) + 1
+                if in_recent:
+                    recent_sub[n] = recent_sub.get(n, 0) + 1
             sm = sorted(m)
             for i in range(len(sm)):
                 for j in range(i + 1, len(sm)):
@@ -73,7 +103,7 @@ def _load_prediction_history_counts(cfg, max_records: int = 10):
                 for j in range(i + 1, len(ss)):
                     pr = frozenset((ss[i], ss[j]))
                     sub_pairs[pr] = sub_pairs.get(pr, 0) + 1
-    return main_counts, sub_counts, main_pairs, sub_pairs
+    return main_counts, sub_counts, main_pairs, sub_pairs, recent_main, recent_sub
 
 
 
@@ -633,15 +663,84 @@ def generate_recommendations(
     dlt_cold_filter = (lambda v: _check_dlt_zone(v, cold_mode=True)) if is_dlt else None
     dlt_candidates = 1200 if is_dlt else 500  # DLT需要更多候选以找到符合区间分布的
 
-    # 历史预测记忆（仅大乐透）：统计最近10期 ensemble 推荐中号码/号码对的出现次数，
-    # 对反复推荐的号码施加惩罚 → 跨期轮换，避免死守同一组冷号。
-    hist_main_counts = {}
-    hist_sub_counts = {}
-    hist_main_pairs = {}
-    hist_sub_pairs = {}
-    if is_dlt:
-        hist_main_counts, hist_sub_counts, hist_main_pairs, hist_sub_pairs = \
-            _load_prediction_history_counts(cfg, max_records=10)
+    # 历史预测记忆（双色球 + 大乐透通用）：统计最近10期 ensemble 推荐中号码/号码对的出现次数，
+    # 对反复推荐的号码施加惩罚 → 跨期轮换，避免死守同一组号码。
+    # 近窗口(默认最近3期)单独加权：某号码最近1-3期被反复推送时重罚（如蓝球04连推3期×3次）。
+    hist_main_counts, hist_sub_counts, hist_main_pairs, hist_sub_pairs, \
+        recent_main_counts, recent_sub_counts = \
+        _load_prediction_history_counts(cfg, max_records=10, recent_records=3)
+
+    def _apply_hist_penalty(m_strat, s_strat):
+        """对概率分布施加跨期惩罚（长窗口 + 近1-3期过度重复），返回归一化后的副本。
+
+        两个彩种通用；只做乘性压制，不做硬性删除 —— 号码仍可能被选中，只是概率被压低。
+
+        ⚠️ 关键：阈值必须用「相对倍数」而不是绝对次数。
+        双色球 10 期 × 5 组 × 6 码 = 300 个推荐位 / 33 个红球 ≈ 每个号平均被推 9 次，
+        若按绝对次数(>=4 就重罚)会把几乎全部号码一起压平 → 概率趋同 → CRF 每期收敛到同一组合
+        （2026-10-20 实测：5 组红球全部变成 [7,10,19,22,32,33]）。因此改用 r = 实际次数/期望次数。
+        """
+        m_strat = np.array(m_strat, dtype=float)
+        s_strat = np.array(s_strat, dtype=float)
+
+        def _power_factors(counts, lo, size, k):
+            """次数 -> {idx: factor}，用幂律压制：factor = r**(-k)，r = 实际/期望。
+
+            r<=1（不超过平均值）不罚；r 越大罚得越狠，但是连续曲线而非硬档位，
+            避免"整片号码一起被压到同一个下限"导致概率分布被压平（→ CRF 收敛到同一组合）。
+            """
+            out = {}
+            total = sum(counts.values()) if counts else 0
+            if total <= 0 or size <= 0:
+                return out
+            exp = total / float(size)
+            for num, cnt in counts.items():
+                idx = num - lo
+                if not (0 <= idx < size):
+                    continue
+                r = cnt / exp
+                if r <= 1.0:
+                    continue
+                out[idx] = out.get(idx, 1.0) * max(r ** (-k), 0.005)
+            return out
+
+        # 长窗口（最近10期，k=2.5）：压制长期守号
+        # 近窗口（最近3期，k=3.0）：过度重复重罚（蓝球 04 连推3期×3次 → r≈6.4 → ×0.003）
+        for idx, f in _power_factors(hist_main_counts, cfg.main_min, main_n, HIST_K_LONG_MAIN).items():
+            m_strat[idx] *= f
+        for idx, f in _power_factors(hist_sub_counts, cfg.sub_min, sub_n, HIST_K_LONG_SUB).items():
+            s_strat[idx] *= f
+        for idx, f in _power_factors(recent_main_counts, cfg.main_min, main_n, HIST_K_RECENT_MAIN).items():
+            m_strat[idx] *= f
+        for idx, f in _power_factors(recent_sub_counts, cfg.sub_min, sub_n, HIST_K_RECENT_SUB).items():
+            s_strat[idx] *= f
+
+        # 号码对：同现次数超期望时轻微压低双方（k=1.5, 下限0.3，不做重罚）
+        def _pair_factors(pairs, lo, size):
+            out = {}
+            total = sum(pairs.values()) if pairs else 0
+            if total <= 0:
+                return out
+            exp = max(total / float(max(1, size * (size - 1) / 2)), 1e-9)
+            for pair, pcnt in pairs.items():
+                r = pcnt / exp
+                if r <= 1.0:
+                    continue
+                f = max(r ** (-1.5), 0.30)
+                for n in pair:
+                    idx = n - lo
+                    if 0 <= idx < size:
+                        out[idx] = out.get(idx, 1.0) * f
+            return out
+
+        for idx, f in _pair_factors(hist_main_pairs, cfg.main_min, main_n).items():
+            m_strat[idx] *= f
+        for idx, f in _pair_factors(hist_sub_pairs, cfg.sub_min, sub_n).items():
+            s_strat[idx] *= f
+
+        m_strat = np.maximum(m_strat, 1e-12)
+        s_strat = np.maximum(s_strat, 1e-12)
+        return m_strat / m_strat.sum(), s_strat / s_strat.sum()
 
     def _run_strategy(strategy_probs_m, strategy_probs_s, rng_seed, n_candidates=500, pattern_filter=None):
         """Run one strategy: generate candidates, score with CRF, pick best.
@@ -837,59 +936,14 @@ def generate_recommendations(
                 for idx in sub_pair_penalty:
                     s_strat[idx] *= (0.10 * penalty_level)
 
-                # ── 历史预测记忆惩罚（仅大乐透）：反复推荐的号码跨期轮换 ──
-                # 参考"已经给出过的记录"：近10期被推荐越多的号码，本期概率压得越低，
-                # 冷号池自动轮换到下一批冷号，避免死守 07/17 这类号码。
-                if is_dlt and hist_main_counts:
-                    for num, cnt in hist_main_counts.items():
-                        idx = num - cfg.main_min
-                        if 0 <= idx < main_n:
-                            if cnt >= 4:
-                                m_strat[idx] *= 0.02   # 近10期推荐≥4次：几乎禁用
-                            elif cnt >= 3:
-                                m_strat[idx] *= 0.10   # ≥3次：大幅压低
-                            elif cnt >= 2:
-                                m_strat[idx] *= 0.35   # ≥2次：明显压低
-                            else:
-                                m_strat[idx] *= 0.85   # 1次：轻微降温
-                    for pair, pcnt in hist_main_pairs.items():
-                        if pcnt >= 3:
-                            for n in pair:
-                                idx = n - cfg.main_min
-                                if 0 <= idx < main_n:
-                                    m_strat[idx] *= 0.20
-                        elif pcnt == 2:
-                            for n in pair:
-                                idx = n - cfg.main_min
-                                if 0 <= idx < main_n:
-                                    m_strat[idx] *= 0.50
-                    for num, cnt in hist_sub_counts.items():
-                        idx = num - cfg.sub_min
-                        if 0 <= idx < sub_n:
-                            if cnt >= 4:
-                                s_strat[idx] *= 0.02
-                            elif cnt >= 3:
-                                s_strat[idx] *= 0.10
-                            elif cnt >= 2:
-                                s_strat[idx] *= 0.35
-                            else:
-                                s_strat[idx] *= 0.85
-                    for pair, pcnt in hist_sub_pairs.items():
-                        if pcnt >= 3:
-                            for n in pair:
-                                idx = n - cfg.sub_min
-                                if 0 <= idx < sub_n:
-                                    s_strat[idx] *= 0.20
-                        elif pcnt == 2:
-                            for n in pair:
-                                idx = n - cfg.sub_min
-                                if 0 <= idx < sub_n:
-                                    s_strat[idx] *= 0.50
+                # ── 后区（蓝球）首次重复即降权：同一蓝球不应在同一期被推满3次 ──
+                for _sn, _sc in used_sub_counts.items():
+                    _idx = _sn - cfg.sub_min
+                    if 0 <= _idx < sub_n and _sc == 1:
+                        s_strat[_idx] *= 0.45
 
-                m_strat = np.maximum(m_strat, 1e-10)
-                m_strat = m_strat / m_strat.sum()
-                s_strat = np.maximum(s_strat, 1e-10)
-                s_strat = s_strat / s_strat.sum()
+                # ── 历史预测记忆惩罚（长窗口10期 + 近1-3期过度重复）──
+                m_strat, s_strat = _apply_hist_penalty(m_strat, s_strat)
                 return m_strat, s_strat
 
             # 首次尝试
@@ -947,20 +1001,57 @@ def generate_recommendations(
         # ════════════════════════════════════════════════════════════════════
 
         def _run_ssq_strategy(strat_m, strat_s, seed, n_candidates, pattern_filter):
-            """运行单策略 + 约束检查重试 + 约束更新（双色球分支）。"""
+            """运行单策略 + 跨期历史惩罚 + 本期已用降权 + 约束检查重试（双色球分支）。
+
+            与旧版的关键差异（2026-10-20 修正）：
+              1. 双色球同样启用跨期预测记忆（最近10期长窗口 + 最近1-3期过度重复重罚），
+                 不再像旧版那样被 `if is_dlt` 排除在外 —— 这正是蓝球 04 每期都被推 3 次的根因。
+              2. 本期已推荐过的号码立即降权（红球 0.55/0.10/0.01，蓝球首次 0.45），
+                 重试时按 pen_level 指数加严，保证 ≤3 次硬约束真正可满足
+                 （旧版只靠换种子重试，实测仍会放出 4 次的号码）。
+            """
+            def _build(pen_level=1.0):
+                sm, ss = _apply_hist_penalty(strat_m, strat_s)
+                # 本期红球已用降权
+                for _mn, _mc in used_main_counts.items():
+                    _idx = _mn - cfg.main_min
+                    if 0 <= _idx < main_n:
+                        _f = INTRA_MAIN_3 if _mc >= 3 else (INTRA_MAIN_2 if _mc == 2 else INTRA_MAIN_1)
+                        sm[_idx] *= _f ** pen_level
+                # 本期红球号码对降权（同现 ≥2 次）
+                _pair_nums = set()
+                for _pair, _pc in used_main_pairs.items():
+                    if _pc >= 2:
+                        _pair_nums.update(_pair)
+                for _pn in _pair_nums:
+                    _idx = _pn - cfg.main_min
+                    if 0 <= _idx < main_n:
+                        sm[_idx] *= (INTRA_PAIR ** pen_level)
+                # 本期蓝球已用降权（首重即压，避免三连）
+                for _sn, _sc in used_sub_counts.items():
+                    _idx = _sn - cfg.sub_min
+                    if 0 <= _idx < sub_n:
+                        _f = INTRA_SUB_2 if _sc >= 2 else INTRA_SUB_1
+                        ss[_idx] *= _f ** pen_level
+                sm = np.maximum(sm, 1e-12); sm = sm / sm.sum()
+                ss = np.maximum(ss, 1e-12); ss = ss / ss.sum()
+                return sm, ss
+
+            sm, ss = _build(1.0)
             main_result, sub_result = _run_strategy(
-                strat_m, strat_s, seed,
+                sm, ss, seed,
                 n_candidates=n_candidates,
                 pattern_filter=pattern_filter
             )
-            # 不满足约束则重试（换种子，最多2次）
-            max_retries = 2
+            # 不满足约束则重试（换种子 + 加大惩罚，最多3次）
+            max_retries = 3
             retry_count = 0
             while not _check_constraints(main_result, sub_result) and retry_count < max_retries:
                 retry_count += 1
                 new_seed = seed + retry_count * 137
+                sm2, ss2 = _build(1.0 + retry_count)
                 main_result, sub_result = _run_strategy(
-                    strat_m, strat_s, new_seed,
+                    sm2, ss2, new_seed,
                     n_candidates=n_candidates * (1 + retry_count),
                     pattern_filter=pattern_filter
                 )
