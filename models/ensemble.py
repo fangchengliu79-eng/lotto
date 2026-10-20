@@ -125,15 +125,22 @@ def _load_blue_period_history(cfg, algorithm: str = "ensemble",
 
 def _blue_caps(prev_counts, recent_counts, sub_min: int, sub_max: int,
                base_cap: int = 3, needed_slots: int = 5):
-    """每个蓝球本期允许出现的组数（与号码身份无关，只看过往推荐次数）。"""
+    """每个蓝球本期允许出现的组数（与号码身份无关，只看过往推荐次数）。
+
+    用户明确要求（2026-10-20）：**调低权重，不等于完全禁止** ——
+    蓝球在同期内仍然可以适当重复出现。因此这里没有任何号码会被压到 0：
+    过度使用的号码本期最多占 1 组（软压制），其余号码仍可占 3 组（同期重复照旧）。
+    """
     caps = {}
     for n in range(sub_min, sub_max + 1):
-        if recent_counts.get(n, 0) >= 4:
-            caps[n] = 0          # 最近3期已堆 4 次以上：本期让位
-        elif prev_counts.get(n, 0) >= 1:
-            caps[n] = 1          # 上一期推过：本期最多 1 组
+        r3 = recent_counts.get(n, 0)
+        p1 = prev_counts.get(n, 0)
+        if r3 >= 3 or p1 >= 1:
+            caps[n] = 1          # 上一期推过 / 近3期已偏多：本期最多 1 组（不封杀）
+        elif r3 == 2:
+            caps[n] = 2          # 略有堆积：本期最多 2 组
         else:
-            caps[n] = base_cap   # 未受限制：同一期仍可重复到 base_cap（默认3）
+            caps[n] = base_cap   # 未受限：同一期仍可重复到 base_cap（默认3）
     # 可行性兜底：若总容量不足以填满本期蓝球位，按最近推荐次数从少到多放开
     guard = 0
     while sum(caps.values()) < needed_slots and guard < 100:
